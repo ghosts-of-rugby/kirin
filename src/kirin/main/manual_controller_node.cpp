@@ -7,8 +7,7 @@ int main(int argc, char* argv[]) {
 
   rclcpp::executors::SingleThreadedExecutor exec;
   auto node = std::make_shared<ManualController>("manual_controller");
-  // exec.add_node(node);
-  
+  exec.add_node(node);
 
   exec.spin();
 

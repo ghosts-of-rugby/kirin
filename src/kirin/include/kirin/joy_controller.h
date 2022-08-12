@@ -12,6 +12,7 @@
 #include <sensor_msgs/msg/joy.hpp>
 
 class JoyController : public rclcpp::Node {
+ public:
   enum class Axis : int {
     LStickY = 0,
     LStickX = 1,
@@ -44,6 +45,7 @@ class JoyController : public rclcpp::Node {
 
  public:
   explicit JoyController(const std::string& node_name, const std::string& topic_name  = "/joy");
+  virtual ~JoyController();
   float GetAxis(Axis axis) const;
   ButtonState GetButtonState(Button button) const;
 

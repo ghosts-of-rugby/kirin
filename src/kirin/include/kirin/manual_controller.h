@@ -1,17 +1,23 @@
 #ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MANUAL_CONTROLLER
 #define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MANUAL_CONTROLLER
 
-
+#include <string>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joy.hpp>
+#include <kirin_msgs/msg/direct_manual.hpp>
 
-class ManualController : public rclcpp::Node {
+#include "kirin/joy_controller.h"
+
+class ManualController : public JoyController {
  public:
-  explicit ManualController(const std::string& node_name, const std::string& topic_name = "/joy");
+  explicit ManualController(const std::string& node_name);
+  ~ManualController();
 
  private:
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-
+  std::string joy_topic_name{"/joy"};
+  std::string direct_pub_topic_name{"direct_manual"};
+  rclcpp::Publisher<kirin_msgs::msg::DirectManual>::SharedPtr direct_pub_;
+  rclcpp::TimerBase::SharedPtr timer_;
 };
 
 

@@ -2,6 +2,13 @@
 
 JoyController::JoyController(const std::string& node_name, const std::string& topic_name)
   : Node(node_name) {
+  
+  // Initial Value
+  for(auto& e: axes_) e = 0.0;
+  axes_.at(static_cast<size_t>(Axis::LTrigger)) = 1.0;
+  axes_.at(static_cast<size_t>(Axis::RTrigger)) = 1.0;
+  for(auto& e: buttons_) e = ButtonState::Released;
+
   auto callback = [this](const sensor_msgs::msg::Joy::UniquePtr msg) -> void {
       RCLCPP_INFO(this->get_logger(), "Received!");
       for(int i=0; i<magic_enum::enum_count<Axis>(); i++) {
@@ -15,6 +22,9 @@ JoyController::JoyController(const std::string& node_name, const std::string& to
   
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   sub_ = create_subscription<sensor_msgs::msg::Joy>(topic_name, qos, callback);
+}
+
+JoyController::~JoyController() {
 }
 
 float JoyController::GetAxis(JoyController::Axis axis) const {
