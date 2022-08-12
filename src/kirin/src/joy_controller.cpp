@@ -1,4 +1,4 @@
-#include "joy_controller/joy_controller.h"
+#include "kirin/joy_controller.h"
 
 JoyController::JoyController(const std::string& node_name, const std::string& topic_name)
   : Node(node_name) {
