@@ -14,7 +14,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Test.msg"
+  "msg/DirectManual.msg"
+  "msg/HandCoordManual.msg"
   DEPENDENCIES std_msgs sensor_msgs
 )
 
