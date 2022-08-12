@@ -1,5 +1,5 @@
-#ifndef KIRIN_JOY_CONTROLLER_HPP_
-#define KIRIN_JOY_CONTROLLER_HPP_
+#ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_JOY_CONTROLLER
+#define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_JOY_CONTROLLER
 
 
 #include <chrono>
@@ -53,4 +53,4 @@ class JoyController : public rclcpp::Node {
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr sub_;
 };
 
-#endif  // KIRIN_JOY_CONTROLLER_HPP_
+#endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_JOY_CONTROLLER */

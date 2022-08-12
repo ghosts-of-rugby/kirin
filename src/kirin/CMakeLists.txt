@@ -5,28 +5,26 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(kirin_msgs REQUIRED)
 
 file(GLOB src_files src/*.cpp) 
 
-add_library(PACKAGE_LIBRARIES ${src_files})
-target_include_directories(PACKAGE_LIBRARIES PUBLIC
-  include
-  ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
-)
-
-
 # ビルド設定の便利関数
 function(custom_executable target)
-  add_executable(${target} src/${target}.cpp)
-  ament_target_dependencies(${target}
-    "rclcpp")
+  add_executable(${target} main/${target}.cpp ${src_files})
+  ament_target_dependencies(${target} 
+    "rclcpp"
+    "kirin_msgs")
   install(TARGETS ${target}
     DESTINATION lib/${PROJECT_NAME})
 endfunction()
 
-# talkerノードのビルド設定
-custom_executable(talker)
+custom_executable(manual_controller_node)
 
+include_directories(
+  include
+  ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
+)
 
 install(DIRECTORY
     launch
