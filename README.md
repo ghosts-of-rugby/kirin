@@ -1,19 +1,22 @@
 # introduction
-## clone repo
+## clone repo & rosdep install
 ```
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
-git clone git@gitlab.com:ghosts-of-rugby/kirin.git
+git clone --recursive git@gitlab.com:ghosts-of-rugby/kirin.git
+cd ~/ros2_ws
+sudo rosdep install -i --from-path src --rosdistro <distro> -y
 ```
+Please replace <distro> for distro name you are using such as foxy (my environment)
 
-## install requirements
+## install apt requirements
 ```
 sudo xargs apt install -y < requirements/apt.txt
 ```
 
 # build
 ```
-cd ~/ros2_ws && colcon build
+cd ~/ros2_ws && colcon build --symlink-install
 ```
 
 # test execution
