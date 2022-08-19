@@ -5,9 +5,7 @@
     <visual name="">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="file:///$(kirin)/resources/fix.stl"/>
-        <!-- <mesh filename="/home/fkfk21/ros2_ws/src/catchrobo/src/kirin/resources/fix.stl"/> -->
-        <!-- <box size="0.3 0.3 0.2"/> -->
+        <mesh filename="package://kirin/resources/fix.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -15,10 +13,100 @@
     </visual>
   </link>
 
+  <link name="theta_link">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/theta.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- <link name="z_link">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/z.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link> -->
+
+  <!-- <link name="r_link">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/z.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link> -->
+
+  <!-- <link name="phi_link">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/phi.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link> -->
+
+  <!-- <link name="phi_extend_link">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/phi_extend.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link> -->
 
   <joint name="base_joint" type="fixed">
     <parent link="base_link"/>
     <child link="fix_base"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
+
+  <joint name="theta_joint" type="fixed">
+    <parent link="fix_base"/>
+    <child link="theta_link"/>
+    <origin xyz="0.0 0.0 0.5" rpy="0.0 0.0 0.0"/>
+  </joint>
+
+  <!-- <joint name="z_joint" type="fixed">
+    <parent link="theta_link"/>
+    <child link="z_link"/>
+    <origin xyz="0.0 0.0 2.0" rpy="0.0 0.0 0.0"/>
+  </joint> -->
+
+  <!-- <joint name="r_joint" type="fixed">
+    <parent link="z_link"/>
+    <child link="r_link"/>
+    <origin xyz="3.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+  </joint> -->
+
+  <!-- <joint name="phi_joint" type="fixed">
+    <parent link="r_link"/>
+    <child link="phi_link"/>
+    <origin xyz="0.0 0.0 -2.0" rpy="0.0 0.0 0.0"/>
+  </joint> -->
+
+  <!-- <joint name="phi_extend_joint" type="fixed">
+    <parent link="r_link"/>
+    <child link="phi_extend_link"/>
+    <origin xyz="0.0 0.0 -3.0" rpy="0.0 0.0 0.0"/>
+  </joint> -->
 
 </robot>
