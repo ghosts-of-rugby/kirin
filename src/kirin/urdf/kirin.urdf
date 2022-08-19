@@ -1,0 +1,24 @@
+<robot name="kirin">
+  <link name="base_link"/>
+
+  <link name="fix_base">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <mesh filename="file:///$(kirin)/resources/fix.stl"/>
+        <!-- <mesh filename="/home/fkfk21/ros2_ws/src/catchrobo/src/kirin/resources/fix.stl"/> -->
+        <!-- <box size="0.3 0.3 0.2"/> -->
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="fix_base"/>
+  </joint>
+
+</robot>

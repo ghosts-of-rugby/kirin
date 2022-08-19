@@ -28,6 +28,8 @@ include_directories(
 
 install(DIRECTORY
     launch
+    resources
+    urdf
     DESTINATION share/${PROJECT_NAME}/
 )
 
