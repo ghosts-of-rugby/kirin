@@ -3,9 +3,9 @@
 
   <link name="fix_base">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/fix.stl"/>
+        <mesh filename="package://kirin/resources/light/fix.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -15,9 +15,9 @@
 
   <link name="theta_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/theta.stl"/>
+        <mesh filename="package://kirin/resources/light/theta.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
@@ -25,53 +25,53 @@
     </visual>
   </link>
 
-  <!-- <link name="z_link">
+  <link name="z_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/z.stl"/>
+        <mesh filename="package://kirin/resources/light/z.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
     </visual>
-  </link> -->
+  </link>
 
-  <!-- <link name="r_link">
+  <link name="r_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.2 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/z.stl"/>
+        <mesh filename="package://kirin/resources/light/r.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
     </visual>
-  </link> -->
+  </link>
 
-  <!-- <link name="phi_link">
+  <link name="phi_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/phi.stl"/>
+        <mesh filename="package://kirin/resources/light/phi.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
     </visual>
-  </link> -->
+  </link>
 
-  <!-- <link name="phi_extend_link">
+  <link name="phi_extend_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
-        <mesh filename="package://kirin/resources/phi_extend.stl"/>
+        <mesh filename="package://kirin/resources/light/phi_extend.stl"/>
       </geometry>
       <material name="">
         <color rgba="0.7 0.7 0.7 1.0"/>
       </material>
     </visual>
-  </link> -->
+  </link>
 
   <joint name="base_joint" type="fixed">
     <parent link="base_link"/>
@@ -82,31 +82,31 @@
   <joint name="theta_joint" type="fixed">
     <parent link="fix_base"/>
     <child link="theta_link"/>
-    <origin xyz="0.0 0.0 0.5" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 0.0"/>
   </joint>
 
-  <!-- <joint name="z_joint" type="fixed">
+  <joint name="z_joint" type="fixed">
     <parent link="theta_link"/>
     <child link="z_link"/>
-    <origin xyz="0.0 0.0 2.0" rpy="0.0 0.0 0.0"/>
-  </joint> -->
+    <origin xyz="0.0 0.0 0.7" rpy="0.0 0.0 0.0"/>
+  </joint>
 
-  <!-- <joint name="r_joint" type="fixed">
+  <joint name="r_joint" type="fixed">
     <parent link="z_link"/>
     <child link="r_link"/>
-    <origin xyz="3.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-  </joint> -->
+    <origin xyz="0.5 0.0 -0.2" rpy="0.0 0.0 0.0"/>
+  </joint>
 
-  <!-- <joint name="phi_joint" type="fixed">
+  <joint name="phi_joint" type="fixed">
     <parent link="r_link"/>
     <child link="phi_link"/>
-    <origin xyz="0.0 0.0 -2.0" rpy="0.0 0.0 0.0"/>
-  </joint> -->
+    <origin xyz="0.4 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+  </joint>
 
-  <!-- <joint name="phi_extend_joint" type="fixed">
+  <joint name="phi_extend_joint" type="fixed">
     <parent link="r_link"/>
     <child link="phi_extend_link"/>
-    <origin xyz="0.0 0.0 -3.0" rpy="0.0 0.0 0.0"/>
-  </joint> -->
+    <origin xyz="0.4 0.0 -0.2" rpy="0.0 0.0 0.0"/>
+  </joint>
 
 </robot>
