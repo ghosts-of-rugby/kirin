@@ -1,0 +1,9 @@
+{
+  "files.associations": {
+    "*.ipp": "cpp",
+    "*.msg": "cpp"
+  },
+  "python.analysis.extraPaths": [
+    "/opt/ros/foxy/lib/python3.8/site-packages"
+  ],
+}
