@@ -30,6 +30,7 @@ install(DIRECTORY
     launch
     resources
     urdf
+    rviz
     DESTINATION share/${PROJECT_NAME}/
 )
 
