@@ -44,7 +44,7 @@ class JoyController : public rclcpp::Node {
   };
 
  public:
-  explicit JoyController(const std::string& node_name, const std::string& topic_name  = "/joy");
+  explicit JoyController(const std::string& node_name, const std::string& joy_topic = "/joy");
   virtual ~JoyController();
   float GetAxis(Axis axis) const;
   ButtonState GetButtonState(Button button) const;

@@ -1,6 +1,6 @@
 #include "kirin/joy_controller.h"
 
-JoyController::JoyController(const std::string& node_name, const std::string& topic_name)
+JoyController::JoyController(const std::string& node_name, const std::string& joy_topic)
   : Node(node_name) {
   
   // Initial Value
@@ -10,7 +10,7 @@ JoyController::JoyController(const std::string& node_name, const std::string& to
   for(auto& e: buttons_) e = ButtonState::Released;
 
   auto callback = [this](const sensor_msgs::msg::Joy::UniquePtr msg) -> void {
-      RCLCPP_INFO(this->get_logger(), "Received!");
+      // RCLCPP_INFO(this->get_logger(), "Received!");
       for(int i=0; i<magic_enum::enum_count<Axis>(); i++) {
         axes_.at(i) = msg->axes.at(i);
       }
@@ -21,7 +21,7 @@ JoyController::JoyController(const std::string& node_name, const std::string& to
     };
   
   rclcpp::QoS qos(rclcpp::KeepLast(10));
-  sub_ = create_subscription<sensor_msgs::msg::Joy>(topic_name, qos, callback);
+  sub_ = create_subscription<sensor_msgs::msg::Joy>(joy_topic, qos, callback);
 }
 
 JoyController::~JoyController() {
