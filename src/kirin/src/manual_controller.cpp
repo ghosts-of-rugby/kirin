@@ -15,8 +15,8 @@ ManualController::ManualController(const std::string& node_name)
     float max_phi_vel = M_PI/4.0; // [rad/s]
     r_ += GetAxis(JoyController::Axis::LStickX) * max_r_vel * 0.01; // ratio * vel[m/s] * 0.01[s]
     z_ += GetAxis(JoyController::Axis::RStickX) * max_z_vel * 0.01;
-    phi_ += GetAxis(JoyController::Axis::LStickY) * -1.0 * max_phi_vel * 0.01;
-    theta_ += GetAxis(JoyController::Axis::RStickY) * -1.0 * max_theta_vel * 0.01;
+    phi_ += GetAxis(JoyController::Axis::LStickY) * max_phi_vel * 0.01;
+    theta_ += GetAxis(JoyController::Axis::RStickY) * max_theta_vel * 0.01;
 
     manual_msg->l = r_;
     manual_msg->z = z_;
