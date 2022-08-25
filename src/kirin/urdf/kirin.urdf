@@ -39,7 +39,7 @@
 
   <link name="r_link">
     <visual name="">
-      <origin xyz="0.2 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.1725 0.0 0.0" rpy="0.0 0.0 1.57"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/r.stl"/>
       </geometry>
@@ -73,39 +73,64 @@
     </visual>
   </link>
 
+  <link name="jagariko">
+    <visual name="">
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <geometry>
+        <mesh filename="package://kirin/resources/jagariko.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+  <link name="jagariko_top"/>
+
   <joint name="base_joint" type="fixed">
     <parent link="base_link"/>
     <child link="fix_base"/>
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
 
+  <joint name="jagariko_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="jagariko"/>
+    <origin xyz="0.8 0.2 0.0" rpy="0.0 0.0 1.57"/>
+  </joint>
+  <joint name="jagariko_top_joint" type="fixed">
+    <parent link="jagariko"/>
+    <child link="jagariko_top"/>
+    <origin xyz="0.0 0.0 0.08" rpy="0.0 0.0 0.0"/>
+  </joint>
+
+
   <joint name="theta_joint" type="continuous">
     <parent link="fix_base"/>
     <child link="theta_link"/>
-    <origin xyz="0.0 0.0 0.1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.022" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
   </joint>
 
   <joint name="z_joint" type="prismatic">
     <parent link="theta_link"/>
     <child link="z_link"/>
-    <origin xyz="0.0 0.0 0.3" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.0 0.0 0.128" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit lower="0.1" upper="0.6" effort="100" velocity="2.0"/>
+    <limit lower="0.0" upper="0.15" effort="100" velocity="2.0"/>
   </joint>
 
   <joint name="r_joint" type="prismatic">
     <parent link="z_link"/>
     <child link="r_link"/>
-    <origin xyz="0.1 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.201 0.0 0.0" rpy="0.0 0.0 0.0"/>
     <axis xyz="1.0 0.0 0.0"/>
-    <limit lower="0.0" upper="0.8" effort="100" velocity="5.0"/>
+    <limit lower="0.0" upper="0.413" effort="100" velocity="5.0"/>
   </joint>
 
   <joint name="phi_joint" type="revolute">
     <parent link="r_link"/>
     <child link="phi_link"/>
-    <origin xyz="0.4 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="-3.14" upper="3.14" effort="10.0" velocity="31.4"/>
   </joint>
@@ -113,7 +138,7 @@
   <joint name="phi_extend_joint" type="revolute">
     <parent link="r_link"/>
     <child link="phi_extend_link"/>
-    <origin xyz="0.4 0.0 -0.2" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="-3.14" upper="3.14" effort="10.0" velocity="31.4"/>
   </joint>
