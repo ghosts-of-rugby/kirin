@@ -32,17 +32,15 @@ def generate_launch_description():
     executable='joy_node'
   )
   
-  manual_controller_node = Node(
-    package='kirin',
-    executable='manual_controller_node',
-    output='screen'
+  # arg にする
+  red = 1
+  base_position = [red * -0.9, 0.1, 0]
+  base_orientation = [0.0, 0.0, 0.0, 1.0]
+  base_publisher = Node(
+    package="tf2_ros",
+    executable="static_transform_publisher",
+    arguments=list(map(str, base_position)) + list(map(str, base_orientation)) + ["base_link", "fix_base"]
   )
-
-    # joint_state_publisher_gui_node = Node(
-    #     package='joint_state_publisher_gui',
-    #     executable='joint_state_publisher_gui',
-    #     condition=IfCondition(LaunchConfiguration('gui'))
-    # )
 
   rviz_node = Node(
       package='rviz2',
@@ -52,10 +50,23 @@ def generate_launch_description():
       arguments=['-d', str(rviz_config_path)],
   )
 
+  manual_controller_node = Node(
+    package='kirin',
+    executable='manual_controller_node',
+    output='screen'
+  )
+
+  jagariko_marker_publiser = Node(
+    package='kirin',
+    executable='jagariko_marker_publisher'
+  )
+
   return LaunchDescription([
     joy_node,
     manual_controller_node,
     joint_state_publisher_node,
     robot_state_publisher_node,
-    rviz_node
+    base_publisher,
+    rviz_node,
+    jagariko_marker_publiser
   ])

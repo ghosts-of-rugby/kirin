@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /RobotModel1
       Splitter Ratio: 0.5
     Tree Height: 675
   - Class: rviz_common/Selection
@@ -97,10 +96,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         fix_base:
           Alpha: 1
           Show Axes: false
@@ -136,6 +131,18 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        jagariko: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /jagariko_markers
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -179,25 +186,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.083726644515991
+      Distance: 4.031778335571289
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.26491793990135193
-        Y: 0.4431423544883728
-        Z: 0.10698738694190979
+        X: 1.6453616619110107
+        Y: 0.7216179966926575
+        Z: 0.10609418153762817
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2053985297679901
+      Pitch: 0.6853981018066406
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.148571014404297
+      Yaw: 5.478570461273193
     Saved: ~
 Window Geometry:
   Displays:
