@@ -1,108 +1,69 @@
 <robot name="kirin">
-  <link name="base_link"/>
 
+  <material name="default">
+    <color rgba="0.7 0.7 0.7 1.0"/> 
+  </material>
+
+  <!-- link settings -->
   <link name="fix_base">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 -1.57"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${-pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/fix.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
 
   <link name="theta_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/theta.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
 
   <link name="z_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/z.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
 
   <link name="r_link">
     <visual name="">
-      <origin xyz="0.1725 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.1725 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/r.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
 
   <link name="phi_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/phi.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
 
   <link name="phi_extend_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/phi_extend.stl"/>
       </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
+      <material name="default"/>
     </visual>
   </link>
-
-  <link name="jagariko">
-    <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 1.57"/>
-      <geometry>
-        <mesh filename="package://kirin/resources/jagariko.stl"/>
-      </geometry>
-      <material name="">
-        <color rgba="0.7 0.7 0.7 1.0"/>
-      </material>
-    </visual>
-  </link>
-  <link name="jagariko_top"/>
-
-  <joint name="base_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="fix_base"/>
-    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-  </joint>
-
-  <joint name="jagariko_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="jagariko"/>
-    <origin xyz="0.8 0.2 0.0" rpy="0.0 0.0 1.57"/>
-  </joint>
-  <joint name="jagariko_top_joint" type="fixed">
-    <parent link="jagariko"/>
-    <child link="jagariko_top"/>
-    <origin xyz="0.0 0.0 0.08" rpy="0.0 0.0 0.0"/>
-  </joint>
-
 
   <joint name="theta_joint" type="continuous">
     <parent link="fix_base"/>
@@ -132,7 +93,7 @@
     <child link="phi_link"/>
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit lower="-3.14" upper="3.14" effort="10.0" velocity="31.4"/>
+    <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
   </joint>
 
   <joint name="phi_extend_joint" type="revolute">
@@ -140,7 +101,7 @@
     <child link="phi_extend_link"/>
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
-    <limit lower="-3.14" upper="3.14" effort="10.0" velocity="31.4"/>
+    <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
   </joint>
 
 </robot>

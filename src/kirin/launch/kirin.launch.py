@@ -10,7 +10,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
   kirin_package_path = get_package_share_path('kirin')
-  urdf_path = kirin_package_path / 'urdf/kirin.urdf'
+  urdf_path = kirin_package_path / 'urdf/kirin.urdf.xacro'
   rviz_config_path = kirin_package_path / 'rviz/kirin.rviz'
 
   # robot_state_publisher
