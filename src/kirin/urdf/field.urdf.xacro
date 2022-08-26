@@ -3,7 +3,7 @@
     <visual name="">
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.14159265"/>
       <geometry>
-        <mesh filename="package://kirin/resources/light_field.dae"/>
+        <mesh filename="package://kirin/resources/light/field.dae"/>
       </geometry>
     </visual>
   </link>
