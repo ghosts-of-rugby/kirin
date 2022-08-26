@@ -21,7 +21,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
 
     // our jaga
     float distance = 0.2;
-    float top_x = -1.0 * 0.45; // if red
+    float top_x = -1.0 * 0.4; // if red
     float top_y = distance*2.5;
     for(int l = 0; l<BLOCK_NUM; l++) {
       jaga_poses.at(3*l + 0) = {top_x, top_y - l*distance};
@@ -31,7 +31,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     jaga_poses.at(OUR_JAGARIKO_NUM-1) = {top_x, top_y - BLOCK_NUM*distance};
 
     // share jaga
-    float share_distance = 0.15;
+    float share_distance = 0.14;
     float share_top_x = 0.0;
     float share_top_y = float(SHARE_JAGARIKO_NUM-1)/2.0 * share_distance;
     for(int l = 0; l<SHARE_JAGARIKO_NUM; l++) {
@@ -46,7 +46,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       }
       for(int i=0; i<SHARE_JAGARIKO_NUM; i++) {
         auto [x, y] = this->share_jaga_poses.at(i);
-        float share_z = 0.05;
+        float share_z = 0.035;
         markers_msg->markers.push_back(this->CreateJagarikoMarker(100+i, x, y, share_z));
       }
 
