@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /RobotModel1
       Splitter Ratio: 0.5
     Tree Height: 675
   - Class: rviz_common/Selection
@@ -49,6 +50,8 @@ Visualization Manager:
         All Enabled: true
         base_link:
           Value: true
+        field:
+          Value: true
         fix_base:
           Value: true
         phi_extend_link:
@@ -68,6 +71,8 @@ Visualization Manager:
       Show Names: false
       Tree:
         base_link:
+          field:
+            {}
           fix_base:
             theta_link:
               z_link:
@@ -133,7 +138,7 @@ Visualization Manager:
       Visual Enabled: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: MarkerArray
+      Name: JagarikoMarkerArray
       Namespaces:
         jagariko: true
       Topic:
@@ -143,6 +148,34 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /jagariko_markers
       Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: /home/fkfk21/ros2_ws/src/catchrobo/src/kirin/urdf/field.urdf.xacro
+      Description Source: File
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: ""
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        field:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -186,25 +219,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 4.031778335571289
+      Distance: 2.597656726837158
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.6453616619110107
-        Y: 0.7216179966926575
-        Z: 0.10609418153762817
+        X: -0.18569354712963104
+        Y: -0.4431164562702179
+        Z: 0.1943330019712448
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6853981018066406
+      Pitch: 0.7303981781005859
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.478570461273193
+      Yaw: 4.773562431335449
     Saved: ~
 Window Geometry:
   Displays:

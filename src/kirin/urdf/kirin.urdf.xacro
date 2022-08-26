@@ -65,6 +65,7 @@
     </visual>
   </link>
 
+  <!-- joint settings -->
   <joint name="theta_joint" type="continuous">
     <parent link="fix_base"/>
     <child link="theta_link"/>

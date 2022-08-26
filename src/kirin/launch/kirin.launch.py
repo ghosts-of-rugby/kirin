@@ -27,10 +27,7 @@ def generate_launch_description():
     parameters=[{'source_list': ['manual_joint']}]
   )
 
-  joy_node = Node(
-    package='joy',
-    executable='joy_node'
-  )
+  joy_node = Node(package='joy', executable='joy_node')
   
   # arg にする
   red = 1
@@ -40,6 +37,12 @@ def generate_launch_description():
     package="tf2_ros",
     executable="static_transform_publisher",
     arguments=list(map(str, base_position)) + list(map(str, base_orientation)) + ["base_link", "fix_base"]
+  )
+  field_frame_publisher = Node(
+    package="tf2_ros",
+    executable="static_transform_publisher",
+    name="field_frame_publisher",
+    arguments=list(map(str, [0.0, 0.0, 0.0])) + list(map(str, base_orientation)) + ["base_link", "field"]
   )
 
   rviz_node = Node(
@@ -67,6 +70,7 @@ def generate_launch_description():
     joint_state_publisher_node,
     robot_state_publisher_node,
     base_publisher,
+    field_frame_publisher,
     rviz_node,
     jagariko_marker_publiser
   ])
