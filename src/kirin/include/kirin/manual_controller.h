@@ -5,7 +5,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <kirin_msgs/msg/direct_manual.hpp>
+#include <kirin_msgs/msg/joint.hpp>
 
 #include "kirin/joy_controller.h"
 
@@ -15,9 +15,9 @@ class ManualController : public JoyController {
   ~ManualController();
 
  private:
-  std::string joy_topic_name{"/joy"};
-  std::string direct_pub_topic_name{"direct_manual"};
-  rclcpp::Publisher<kirin_msgs::msg::DirectManual>::SharedPtr direct_pub_;
+  std::string joy_topic_name_{"/joy"};
+  std::string direct_pub_topic_name_{"direct_manual"};
+  rclcpp::Publisher<kirin_msgs::msg::Joint>::SharedPtr direct_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
 
