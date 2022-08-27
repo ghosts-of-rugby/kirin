@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
 
@@ -15,17 +16,20 @@ function(custom_executable target)
   add_executable(${target} main/${target}.cpp ${src_files})
   ament_target_dependencies(${target} 
     "rclcpp"
+    "tf2_eigen"
     "visualization_msgs"
+    "geometry_msgs"
     "kirin_msgs")
   install(TARGETS ${target}
     DESTINATION lib/${PROJECT_NAME})
 endfunction()
 
-custom_executable(manual_controller_node)
+custom_executable(kirin_main_executor)
 custom_executable(jagariko_marker_publisher)
 
 include_directories(
   include
+  /usr/include/eigen3
   ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
 )
 
