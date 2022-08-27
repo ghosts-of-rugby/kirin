@@ -5,7 +5,7 @@
 //
 // rtGetInf.cpp
 //
-// Code generation for function 'r'
+// Code generation for function 'ik_r'
 //
 
 // Abstract:

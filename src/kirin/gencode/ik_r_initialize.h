@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_rtwutil.h
+// ik_r_initialize.h
 //
-// Code generation for function 'r_rtwutil'
+// Code generation for function 'ik_r_initialize'
 //
 
-#ifndef R_RTWUTIL_H
-#define R_RTWUTIL_H
+#ifndef IK_R_INITIALIZE_H
+#define IK_R_INITIALIZE_H
 
 // Include files
 #include "rtwtypes.h"
@@ -18,9 +18,9 @@
 
 // Function Declarations
 namespace model {
-extern double rt_powd_snf(double u0, double u1);
+extern void ik_r_initialize();
 
 }
 
 #endif
-// End of code generation (r_rtwutil.h)
+// End of code generation (ik_r_initialize.h)

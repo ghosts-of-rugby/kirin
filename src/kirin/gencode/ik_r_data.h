@@ -3,24 +3,18 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_terminate.h
+// ik_r_data.h
 //
-// Code generation for function 'r_terminate'
+// Code generation for function 'ik_r_data'
 //
 
-#ifndef R_TERMINATE_H
-#define R_TERMINATE_H
+#ifndef IK_R_DATA_H
+#define IK_R_DATA_H
 
 // Include files
 #include "rtwtypes.h"
 #include <cstddef>
 #include <cstdlib>
 
-// Function Declarations
-namespace model {
-extern void r_terminate();
-
-}
-
 #endif
-// End of code generation (r_terminate.h)
+// End of code generation (ik_r_data.h)

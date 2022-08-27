@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// theta.h
+// ik_theta.h
 //
-// Code generation for function 'theta'
+// Code generation for function 'ik_theta'
 //
 
-#ifndef THETA_H
-#define THETA_H
+#ifndef IK_THETA_H
+#define IK_THETA_H
 
 // Include files
 #include "rtwtypes.h"
@@ -18,9 +18,10 @@
 
 // Function Declarations
 namespace model {
-extern void theta(double l, double p0, double x0, double b_y0, double out1[2]);
+extern void ik_theta(double l, double p0, double x0, double b_y0,
+                     double out1[2]);
 
 }
 
 #endif
-// End of code generation (theta.h)
+// End of code generation (ik_theta.h)

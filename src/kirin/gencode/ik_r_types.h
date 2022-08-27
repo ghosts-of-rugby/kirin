@@ -3,13 +3,16 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_data.cpp
+// ik_r_types.h
 //
-// Code generation for function 'r_data'
+// Code generation for function 'ik_r'
 //
+
+#ifndef IK_R_TYPES_H
+#define IK_R_TYPES_H
 
 // Include files
-#include "r_data.h"
-#include "rt_nonfinite.h"
+#include "rtwtypes.h"
 
-// End of code generation (r_data.cpp)
+#endif
+// End of code generation (ik_r_types.h)

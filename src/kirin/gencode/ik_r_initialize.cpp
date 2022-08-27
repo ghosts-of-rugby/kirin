@@ -3,21 +3,21 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_initialize.cpp
+// ik_r_initialize.cpp
 //
-// Code generation for function 'r_initialize'
+// Code generation for function 'ik_r_initialize'
 //
 
 // Include files
-#include "r_initialize.h"
+#include "ik_r_initialize.h"
 #include "rt_nonfinite.h"
 
 // Function Definitions
 namespace model {
-void r_initialize()
+void ik_r_initialize()
 {
 }
 
 } // namespace model
 
-// End of code generation (r_initialize.cpp)
+// End of code generation (ik_r_initialize.cpp)

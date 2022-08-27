@@ -19,9 +19,4 @@ coderassumptions/
 target/
 build/
 debug/
-examples/
-interface/
-*.dmr
-*.o
-*.mk
 *.slxc

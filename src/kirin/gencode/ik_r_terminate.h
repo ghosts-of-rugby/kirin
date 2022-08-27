@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_initialize.h
+// ik_r_terminate.h
 //
-// Code generation for function 'r_initialize'
+// Code generation for function 'ik_r_terminate'
 //
 
-#ifndef R_INITIALIZE_H
-#define R_INITIALIZE_H
+#ifndef IK_R_TERMINATE_H
+#define IK_R_TERMINATE_H
 
 // Include files
 #include "rtwtypes.h"
@@ -18,9 +18,9 @@
 
 // Function Declarations
 namespace model {
-extern void r_initialize();
+extern void ik_r_terminate();
 
 }
 
 #endif
-// End of code generation (r_initialize.h)
+// End of code generation (ik_r_terminate.h)

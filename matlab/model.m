@@ -12,16 +12,17 @@ S.r = simplify(S.r);
 S.th = simplify(S.th);
 S.phi = simplify(S.phi);
 
-r_func = matlabFunction(S.r, 'File', 'gen/r.m');
-th_func = matlabFunction(S.th, 'File', 'gen/theta.m');
-phi_func = matlabFunction(S.phi, 'File', 'gen/phi.m');
+mkdir("gen");
+r_func = matlabFunction(S.r, 'File', 'gen/ik_r.m');
+th_func = matlabFunction(S.th, 'File', 'gen/ik_theta.m');
+phi_func = matlabFunction(S.phi, 'File', 'gen/ik_phi.m');
 
 cfg = coder.config('lib');
 cfg.TargetLang = 'C++';
 cfg.CppNamespace = 'model';
-codegen -config cfg gen/r.m -args {double(0), double(0), double(0), double(0)} ...
-        gen/theta.m -args {double(0), double(0), double(0), double(0)} ...
-        gen/phi.m -args {double(0), double(0), double(0), double(0)} ...
+codegen -config cfg gen/ik_r.m -args {double(0), double(0), double(0), double(0)} ...
+        gen/ik_theta.m -args {double(0), double(0), double(0), double(0)} ...
+        gen/ik_phi.m -args {double(0), double(0), double(0), double(0)} ...
         -d ../src/kirin/gencode/ -std:c++11
 for ext = ["mat", "o", "mk", "tmw", "dmw", "dmr", "a"]
     path = "../src/kirin/gencode/*."+ext;

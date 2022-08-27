@@ -5,7 +5,7 @@
 //
 // rt_nonfinite.h
 //
-// Code generation for function 'r'
+// Code generation for function 'ik_r'
 //
 
 #ifndef RT_NONFINITE_H

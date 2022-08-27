@@ -3,13 +3,13 @@
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
 //
-// r_rtwutil.cpp
+// ik_r_rtwutil.cpp
 //
-// Code generation for function 'r_rtwutil'
+// Code generation for function 'ik_r_rtwutil'
 //
 
 // Include files
-#include "r_rtwutil.h"
+#include "ik_r_rtwutil.h"
 #include "rt_nonfinite.h"
 #include <cmath>
 
@@ -62,4 +62,4 @@ double rt_powd_snf(double u0, double u1)
 
 } // namespace model
 
-// End of code generation (r_rtwutil.cpp)
+// End of code generation (ik_r_rtwutil.cpp)
