@@ -9,11 +9,12 @@ find_package(tf2_eigen REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
 
-file(GLOB src_files src/*.cpp) 
+file(GLOB src_files src/*.cpp)
+file(GLOB gencode_files gencode/*.cpp)
 
 # ビルド設定の便利関数
 function(custom_executable target)
-  add_executable(${target} main/${target}.cpp ${src_files})
+  add_executable(${target} main/${target}.cpp ${src_files} ${gencode_files})
   ament_target_dependencies(${target} 
     "rclcpp"
     "tf2_eigen"
@@ -29,7 +30,9 @@ custom_executable(jagariko_marker_publisher)
 
 include_directories(
   include
+  gencode
   /usr/include/eigen3
+  /usr/local/MATLAB/R2022a/extern/include
   ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
 )
 
