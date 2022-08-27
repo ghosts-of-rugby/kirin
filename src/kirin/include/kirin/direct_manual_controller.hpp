@@ -1,5 +1,5 @@
-#ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MANUAL_CONTROLLER
-#define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MANUAL_CONTROLLER
+#ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER
+#define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER
 
 #include <string>
 #include <rclcpp/rclcpp.hpp>
@@ -7,12 +7,12 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <kirin_msgs/msg/joint.hpp>
 
-#include "kirin/joy_controller.h"
+#include "kirin/joy_controller.hpp"
 
-class ManualController : public JoyController {
+class DirectManualController : public JoyController {
  public:
-  explicit ManualController(const std::string& node_name);
-  ~ManualController();
+  explicit DirectManualController(const std::string& node_name);
+  ~DirectManualController();
 
  private:
   std::string joy_topic_name_{"/joy"};
@@ -28,4 +28,4 @@ class ManualController : public JoyController {
 };
 
 
-#endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MANUAL_CONTROLLER */
+#endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER */

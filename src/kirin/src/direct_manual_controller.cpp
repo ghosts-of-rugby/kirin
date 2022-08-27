@@ -1,9 +1,9 @@
 #include <chrono>
-#include "kirin/manual_controller.h"
+#include "kirin/direct_manual_controller.hpp"
 
 using namespace std::chrono_literals;
 
-ManualController::ManualController(const std::string& node_name)
+DirectManualController::DirectManualController(const std::string& node_name)
   : JoyController(node_name, "/joy") {
   
   auto direct_pub_message = [this]() -> void {
@@ -41,5 +41,5 @@ ManualController::ManualController(const std::string& node_name)
   timer_ = create_wall_timer(10ms, direct_pub_message);
 }
 
-ManualController::~ManualController() {
+DirectManualController::~DirectManualController() {
 }
