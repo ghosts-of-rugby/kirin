@@ -7,7 +7,7 @@
 
 WorldCoordManualController::WorldCoordManualController(const std::string& node_name)
   : JoyController(node_name, "/joy"),
-    pos(0.3, 0.3, 0.6),
+    pos(0.3, 0.1, 0.1),
     psi(0.0),
     timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)){
   using namespace std::chrono_literals;
@@ -26,8 +26,8 @@ void WorldCoordManualController::TimerCallback() {
   input_pose->header.stamp = get_clock()->now();
 
   Eigen::Vector3d vel(
-    this->GetAxis(JoyController::Axis::LStickY)* -1.0 * 0.5,
-    this->GetAxis(JoyController::Axis::LStickX)* 1.0 * 0.5,
+    this->GetAxis(JoyController::Axis::LStickY)* -1.0 * 0.3,
+    this->GetAxis(JoyController::Axis::LStickX)* 1.0 * 0.3,
     this->GetAxis(JoyController::Axis::RStickX)* 1.0 * 0.2
   );
   pos += vel*0.01; // 10ms loop
@@ -35,7 +35,7 @@ void WorldCoordManualController::TimerCallback() {
 
   double left_trig = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
   double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  double omega = (left_trig - right_trig) * 0.2;
+  double omega = (left_trig - right_trig) * 0.3;
   psi += omega*0.01;
   Eigen::Quaterniond quat(Eigen::AngleAxisd(psi, Eigen::Vector3d::UnitZ()));
   input_pose->pose.orientation = Eigen::toMsg(quat);
@@ -46,12 +46,14 @@ void WorldCoordManualController::TimerCallback() {
   joint_state->name = {
     "theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"
   };
+  // dokokakara mottekuru
   double l = 0.05;
+  double r_offset = 0.345 + 0.201;
   double r = CalcR(l, pos.x(), pos.y(), psi);
   double theta = CalcTheta(l, pos.x(), pos.y(), psi);
   double phi = CalcPhi(l, pos.x(), pos.y(), psi);
   joint_state->position = {
-    theta, pos.z(), r, phi, phi 
+    theta, pos.z(), r-r_offset, phi, phi 
   };
   joint_pub_->publish(std::move(joint_state));
 }

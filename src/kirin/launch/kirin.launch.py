@@ -53,9 +53,9 @@ def generate_launch_description():
       arguments=['-d', str(rviz_config_path)],
   )
 
-  manual_controller_node = Node(
+  kirin_main_executor = Node(
     package='kirin',
-    executable='manual_controller_node',
+    executable='kirin_main_executor',
     output='screen'
   )
 
@@ -66,7 +66,7 @@ def generate_launch_description():
 
   return LaunchDescription([
     joy_node,
-    manual_controller_node,
+    kirin_main_executor,
     joint_state_publisher_node,
     robot_state_publisher_node,
     base_publisher,

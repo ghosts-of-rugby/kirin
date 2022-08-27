@@ -1,8 +1,9 @@
-<robot name="kirin">
+<robot name="kirin" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <material name="default">
     <color rgba="0.7 0.7 0.7 1.0"/> 
   </material>
+  
 
   <!-- link settings -->
   <link name="fix_base">
@@ -54,6 +55,9 @@
       <material name="default"/>
     </visual>
   </link>
+  <link name="top_bellows"/>
+  <link name="left_bellows"/>
+  <link name="right_bellows"/>
 
   <link name="phi_extend_link">
     <visual name="">
@@ -95,6 +99,25 @@
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
+  </joint>
+
+  <xacro:property name="bellows_d" value="0.1"/>
+  <xacro:property name="bellows_z" value="-0.042"/>
+
+  <joint name="top_bellows_joint" type="fixed">
+    <parent link="phi_link"/>
+    <child link="top_bellows"/>
+    <origin xyz="0.05 0.0 ${bellows_z}" rpy="0.0 0.0 0.0"/>
+  </joint>
+  <joint name="left_bellows_joint" type="fixed">
+    <parent link="top_bellows"/>
+    <child link="left_bellows"/>
+    <origin xyz="-${bellows_d} -${bellows_d} 0.0" rpy="0.0 0.0 0.0"/>
+  </joint>
+  <joint name="right_bellows_joint" type="fixed">
+    <parent link="top_bellows"/>
+    <child link="right_bellows"/>
+    <origin xyz="-${bellows_d} ${bellows_d} 0.0" rpy="0.0 0.0 0.0"/>
   </joint>
 
   <joint name="phi_extend_joint" type="revolute">

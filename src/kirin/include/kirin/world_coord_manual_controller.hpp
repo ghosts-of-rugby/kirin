@@ -20,7 +20,7 @@ class WorldCoordManualController : public JoyController {
   std::function<void()> timer_callback_;
   Eigen::Vector3d pos;
   double psi;
-  int ik_index{0};
+  int ik_index{1};
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
