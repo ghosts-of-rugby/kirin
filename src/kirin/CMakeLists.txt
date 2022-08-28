@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2_eigen REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
 
@@ -18,6 +19,7 @@ function(custom_executable target)
   ament_target_dependencies(${target} 
     "rclcpp"
     "tf2_eigen"
+    "std_msgs"
     "visualization_msgs"
     "geometry_msgs"
     "kirin_msgs")
@@ -27,6 +29,7 @@ endfunction()
 
 custom_executable(kirin_main_executor)
 custom_executable(jagariko_marker_publisher)
+custom_executable(jsk_visualize_node)
 
 include_directories(
   include

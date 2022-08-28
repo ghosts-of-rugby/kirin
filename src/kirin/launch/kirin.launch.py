@@ -54,14 +54,15 @@ def generate_launch_description():
   )
 
   kirin_main_executor = Node(
-    package='kirin',
-    executable='kirin_main_executor',
-    output='screen'
+    package='kirin', executable='kirin_main_executor', output='screen'
   )
 
   jagariko_marker_publiser = Node(
-    package='kirin',
-    executable='jagariko_marker_publisher'
+    package='kirin', executable='jagariko_marker_publisher'
+  )
+
+  jsk_visualize_node = Node(
+    package='kirin', executable='jsk_visualize_node'
   )
 
   return LaunchDescription([
@@ -72,5 +73,6 @@ def generate_launch_description():
     base_publisher,
     field_frame_publisher,
     rviz_node,
-    jagariko_marker_publiser
+    jagariko_marker_publiser,
+    jsk_visualize_node
   ])

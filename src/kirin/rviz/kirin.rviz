@@ -3,12 +3,8 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Global Options1
-        - /Status1
-        - /RobotModel1
-        - /RobotModel1/Links1
-      Splitter Ratio: 0.5
+      Expanded: ~
+      Splitter Ratio: 0.5060483813285828
     Tree Height: 675
   - Class: rviz_common/Selection
     Name: Selection
@@ -207,7 +203,7 @@ Visualization Manager:
       Enabled: true
       Head Length: 0.05000000074505806
       Head Radius: 0.05000000074505806
-      Name: Pose
+      Name: InputPose
       Shaft Length: 0.10000000149011612
       Shaft Radius: 0.029999999329447746
       Shape: Arrow
@@ -218,6 +214,114 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /world_coord_pose
       Value: true
+    - Class: jsk_rviz_plugin/PieChart
+      Enabled: true
+      Name: phi
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rviz/phi
+      Value: true
+      auto color change: false
+      background color: 0; 0; 0
+      backround alpha: 0
+      clockwise rotate direction: false
+      foreground alpha: 0.4000000059604645
+      foreground alpha 2: 0.30000001192092896
+      foreground color: 25; 255; 240
+      left: 206
+      max color: 255; 0; 0
+      max value: 180
+      min value: -180
+      show caption: true
+      size: 128
+      text size: 14
+      top: 128
+    - Class: jsk_rviz_plugin/PieChart
+      Enabled: true
+      Name: theta
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rviz/theta
+      Value: true
+      auto color change: false
+      background color: 0; 0; 0
+      backround alpha: 0
+      clockwise rotate direction: false
+      foreground alpha: 0.4000000059604645
+      foreground alpha 2: 0.30000001192092896
+      foreground color: 25; 255; 240
+      left: 68
+      max color: 255; 0; 0
+      max value: 180
+      min value: -180
+      show caption: true
+      size: 128
+      text size: 14
+      top: 128
+    - Class: jsk_rviz_plugin/LinearGauge
+      Enabled: true
+      Name: z
+      Show Value: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rviz/z
+      Value: true
+      Vertical Gauge: true
+      auto color change: false
+      background color: 0; 0; 0
+      backround alpha: 0
+      border: true
+      foreground alpha: 0.699999988079071
+      foreground color: 25; 255; 240
+      height: 188
+      left: 28
+      linewidth: 1
+      max color: 255; 0; 0
+      max value: 0.8999999761581421
+      min value: 0.4000000059604645
+      show caption: true
+      text size: 14
+      top: 80
+      update interval: 0.03999999910593033
+      width: 30
+    - Class: jsk_rviz_plugin/LinearGauge
+      Enabled: true
+      Name: r
+      Show Value: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rviz/r
+      Value: true
+      Vertical Gauge: false
+      auto color change: false
+      background color: 0; 0; 0
+      backround alpha: 0
+      border: true
+      foreground alpha: 0.699999988079071
+      foreground color: 25; 255; 240
+      height: 30
+      left: 68
+      linewidth: 1
+      max color: 255; 0; 0
+      max value: 1.2999999523162842
+      min value: 0.4000000059604645
+      show caption: true
+      text size: 14
+      top: 80
+      update interval: 0.03999999910593033
+      width: 270
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -261,25 +365,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.8757567405700684
+      Distance: 1.9510326385498047
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.08532214909791946
-        Y: 0.5141656398773193
-        Z: -0.013677272945642471
+        X: -0.29046574234962463
+        Y: 0.19197094440460205
+        Z: 0.07268914580345154
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.004797101020813
+      Pitch: 0.509797215461731
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.820448398590088
+      Yaw: 4.792311668395996
     Saved: ~
 Window Geometry:
   Displays:
