@@ -190,7 +190,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Name: RobotModel
+      Name: Field
       TF Prefix: ""
       Update Interval: 0
       Value: true
