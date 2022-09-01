@@ -6,8 +6,9 @@
 #include "ik_phi.h"
 #include "ik_theta.h"
 
-WorldCoordManualController::WorldCoordManualController(const std::string& node_name)
-  : JoyController(node_name, "/joy"),
+WorldCoordManualController::WorldCoordManualController(
+    const std::string& node_name, const rclcpp::NodeOptions& options)
+  : JoyController(node_name, options),
     pos(0.3, 0.1, 0.1),
     psi(0.0),
     timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)){

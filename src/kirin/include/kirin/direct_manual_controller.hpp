@@ -11,7 +11,8 @@
 
 class DirectManualController : public JoyController {
  public:
-  explicit DirectManualController(const std::string& node_name);
+  explicit DirectManualController(const std::string& node_name,
+                                  const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   ~DirectManualController();
 
  private:

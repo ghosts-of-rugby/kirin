@@ -16,8 +16,10 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   static constexpr size_t JAGARIKO_NUM = OUR_JAGARIKO_NUM + SHARE_JAGARIKO_NUM;
   static constexpr size_t BLOCK_NUM = (OUR_JAGARIKO_NUM-1)/3;
 
-  explicit JagarikoMarkersPublisher(const std::string& topic_name)
-    : Node("jagariko_marker_publisher") {
+  explicit JagarikoMarkersPublisher(
+      const std::string& topic_name,
+      const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
+    : Node("jagariko_marker_publisher", options) {
 
     // our jaga
     float distance = 0.2;

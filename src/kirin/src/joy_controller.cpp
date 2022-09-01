@@ -1,7 +1,8 @@
 #include "kirin/joy_controller.hpp"
 
-JoyController::JoyController(const std::string& node_name, const std::string& joy_topic)
-  : Node(node_name),
+JoyController::JoyController(
+    const std::string& node_name, const rclcpp::NodeOptions& options)
+  : Node(node_name, options),
     joy_callback_(std::bind(&JoyController::JoyTopicCallback, this, std::placeholders::_1)) {
   
   // Initial Value
@@ -11,7 +12,7 @@ JoyController::JoyController(const std::string& node_name, const std::string& jo
   for(auto& e: buttons_) e = ButtonState::Released;
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
-  sub_ = create_subscription<sensor_msgs::msg::Joy>(joy_topic, qos, joy_callback_);
+  sub_ = create_subscription<sensor_msgs::msg::Joy>("/joy", qos, joy_callback_);
 }
 
 JoyController::~JoyController() {

@@ -12,7 +12,8 @@
 
 class WorldCoordManualController : public JoyController {
  public:
-  explicit WorldCoordManualController(const std::string& node_name, const rclcpp::NodeOptions & options);
+  explicit WorldCoordManualController(
+    const std::string& node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~WorldCoordManualController();
 
  private:

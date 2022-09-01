@@ -18,7 +18,7 @@ class HandToolManager: public rclcpp::Node {
   using Marker = visualization_msgs::msg::Marker;
   using SetHandState = kirin_msgs::srv::SetHandState;
   using ToggleHandState = kirin_msgs::srv::ToggleHandState;
-  explicit HandToolManager();
+  explicit HandToolManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
  private:
   void TimerCallback();

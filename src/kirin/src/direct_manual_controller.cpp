@@ -3,8 +3,9 @@
 
 using namespace std::chrono_literals;
 
-DirectManualController::DirectManualController(const std::string& node_name)
-  : JoyController(node_name, "/joy") {
+DirectManualController::DirectManualController(
+    const std::string& node_name, const rclcpp::NodeOptions& options)
+  : JoyController(node_name, options) {
   
   auto direct_pub_message = [this]() -> void {
     auto manual_msg = std::make_unique<kirin_msgs::msg::Joint>();

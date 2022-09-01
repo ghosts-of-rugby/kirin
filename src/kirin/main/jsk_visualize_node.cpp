@@ -9,8 +9,8 @@
 
 class JskVisualizeNode: public rclcpp::Node {
  public:
-  explicit JskVisualizeNode()
-    : Node("jsk_visualize_node"),
+  explicit JskVisualizeNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
+    : Node("jsk_visualize_node", options),
       joint_callback_(std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1)),
       timer_callback_(std::bind(&JskVisualizeNode::TimerCallback, this)){
 

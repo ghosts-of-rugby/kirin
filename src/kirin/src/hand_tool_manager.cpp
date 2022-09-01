@@ -4,8 +4,8 @@
 
 using namespace std::chrono_literals;
 
-HandToolManager::HandToolManager()
-    : Node("hand_tool_manager"),
+HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
+    : Node("hand_tool_manager", options),
       hand_state_(HandState::Shrink),
       timer_callback_(std::bind(&HandToolManager::TimerCallback, this)),
       handle_set_hand_state_(
