@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Joint.msg"
   "msg/HandState.msg"
   "srv/SetHandState.srv"
+  "srv/ToggleHandState.srv"
   DEPENDENCIES std_msgs sensor_msgs
 )
 

@@ -1,6 +1,5 @@
 
 #include <magic_enum.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include "kirin/hand_tool_manager.hpp"
 
 using namespace std::chrono_literals;
@@ -11,19 +10,22 @@ HandToolManager::HandToolManager()
       timer_callback_(std::bind(&HandToolManager::TimerCallback, this)),
       handle_set_hand_state_(
         std::bind(&HandToolManager::SetHandStateCallback, this,
+                  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+      handle_toggle_hand_state_(
+        std::bind(&HandToolManager::ToggleHandStateCallback, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)){
 
-  // std::string mesh_directory
-  //   = ament_index_cpp::get_package_share_directory("kirin") + "/resources/light";
   std::string mesh_directory = "package://kirin/resources/light";
   resource_map_ = {
     {HandState::Shrink, mesh_directory+"/phi.stl"},
-    {HandState::Expand, mesh_directory+"/phi_expand.stl"}
+    {HandState::Extend, mesh_directory+"/phi_extend.stl"}
   };
 
   marker_pub_ = create_publisher<Marker>("hand_marker", rclcpp::SystemDefaultsQoS());
   timer_ = create_wall_timer(10ms, timer_callback_);
-  hand_state_sub_ = create_service<SetHandState>("set_hand_state", handle_set_hand_state_);
+  set_srv_ = create_service<SetHandState>("tool/set_hand_state", handle_set_hand_state_);
+  toggle_srv_ = create_service<ToggleHandState>(
+                  "tool/toggle_hand_state", handle_toggle_hand_state_);
 }
 
 void HandToolManager::TimerCallback() {
@@ -56,9 +58,10 @@ void HandToolManager::TimerCallback() {
   marker_pub_->publish(std::move(marker_msg));
 }
 
-void HandToolManager::SetHandStateCallback(const std::shared_ptr<rmw_request_id_t> request_header,
-                                           const std::shared_ptr<SetHandState::Request> request,
-                                           std::shared_ptr<SetHandState::Response> response) {
+void HandToolManager::SetHandStateCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<SetHandState::Request> request,
+    std::shared_ptr<SetHandState::Response> response) {
   (void)request_header; // Lint Tool 対策
   auto next_state = magic_enum::enum_cast<HandState>(request->hand_state.value);
 
@@ -69,4 +72,20 @@ void HandToolManager::SetHandStateCallback(const std::shared_ptr<rmw_request_id_
     this->hand_state_ = next_state.value();
     response->result = true;
   }
+}
+
+void HandToolManager::ToggleHandStateCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<ToggleHandState::Request> request,
+    std::shared_ptr<ToggleHandState::Response> response) {
+  
+  (void)request_header; // Lint Tool 対策
+  auto next_state = (this->hand_state_ == HandState::Extend
+                      ? HandState::Shrink : HandState::Extend);
+
+    RCLCPP_INFO(this->get_logger(), "ToolState: '%s' -> '%s'",
+                magic_enum::enum_name(this->hand_state_).data(),
+                magic_enum::enum_name(next_state).data());
+    this->hand_state_ = next_state;
+    response->result = true;
 }
