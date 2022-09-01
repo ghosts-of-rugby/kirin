@@ -46,9 +46,10 @@
     </visual>
   </link>
 
-  <link name="phi_link">
+  <link name="phi_link_base"/>
+  <!-- <link name="phi_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/phi.stl"/>
       </geometry>
@@ -61,13 +62,13 @@
 
   <link name="phi_extend_link">
     <visual name="">
-      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2}"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
       <geometry>
         <mesh filename="package://kirin/resources/light/phi_extend.stl"/>
       </geometry>
       <material name="default"/>
     </visual>
-  </link>
+  </link> -->
 
   <!-- joint settings -->
   <joint name="theta_joint" type="continuous">
@@ -95,13 +96,13 @@
 
   <joint name="phi_joint" type="revolute">
     <parent link="r_link"/>
-    <child link="phi_link"/>
+    <child link="phi_link_base"/>
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
   </joint>
 
-  <xacro:property name="bellows_d" value="0.1"/>
+  <!-- <xacro:property name="bellows_d" value="0.1"/>
   <xacro:property name="bellows_z" value="-0.042"/>
 
   <joint name="top_bellows_joint" type="fixed">
@@ -126,6 +127,6 @@
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
-  </joint>
+  </joint> -->
 
 </robot>

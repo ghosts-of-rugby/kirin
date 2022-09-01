@@ -1,0 +1,3 @@
+HandState hand_state
+---
+bool result
