@@ -51,19 +51,11 @@ Visualization Manager:
           Value: true
         fix_base:
           Value: true
-        left_bellows:
-          Value: true
-        phi_extend_link:
-          Value: true
-        phi_link:
+        phi_link_base:
           Value: true
         r_link:
           Value: true
-        right_bellows:
-          Value: true
         theta_link:
-          Value: true
-        top_bellows:
           Value: true
         z_link:
           Value: true
@@ -80,14 +72,8 @@ Visualization Manager:
             theta_link:
               z_link:
                 r_link:
-                  phi_extend_link:
+                  phi_link_base:
                     {}
-                  phi_link:
-                    top_bellows:
-                      left_bellows:
-                        {}
-                      right_bellows:
-                        {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -113,38 +99,20 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        left_bellows:
+        phi_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        phi_extend_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        phi_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         r_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        right_bellows:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         theta_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        top_bellows:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         z_link:
           Alpha: 1
           Show Axes: false
@@ -155,6 +123,18 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: HandMarker
+      Namespaces:
+        tool: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /hand_marker
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: JagarikoMarkerArray
@@ -389,7 +369,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.4697155952453613
+      Distance: 2.136258840560913
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -404,10 +384,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7647968530654907
+      Pitch: 0.6647968888282776
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.80731201171875
+      Yaw: 4.7573113441467285
     Saved: ~
 Window Geometry:
   Displays:

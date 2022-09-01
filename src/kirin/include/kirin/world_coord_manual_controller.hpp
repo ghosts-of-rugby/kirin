@@ -6,12 +6,13 @@
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include "kirin/joy_controller.hpp"
 
 
 class WorldCoordManualController : public JoyController {
  public:
-  explicit WorldCoordManualController(const std::string& node_name);
+  explicit WorldCoordManualController(const std::string& node_name, const rclcpp::NodeOptions & options);
   ~WorldCoordManualController();
 
  private:
@@ -24,6 +25,7 @@ class WorldCoordManualController : public JoyController {
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
+  rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::TimerBase::SharedPtr timer_;
 
   void TimerCallback();
