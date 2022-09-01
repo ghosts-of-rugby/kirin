@@ -39,19 +39,24 @@ class JoyController : public rclcpp::Node {
   };
 
   enum class ButtonState {
-    Released,
-    Pressed
+    Released=0,
+    Pressed=1
   };
 
  public:
   explicit JoyController(const std::string& node_name, const std::string& joy_topic = "/joy");
   virtual ~JoyController();
-  float GetAxis(Axis axis) const;
-  ButtonState GetButtonState(Button button) const;
+  float GetAxis(const Axis& axis) const;
+  ButtonState GetButtonState(const Button& button) const;
+  void RegisterButtonPressedCallback(const Button& button, std::function<void()> callback);
 
  private:
+  void JoyTopicCallback(const sensor_msgs::msg::Joy::UniquePtr msg);
+
+  std::function<void(const sensor_msgs::msg::Joy::UniquePtr)> joy_callback_;
   std::array<float, magic_enum::enum_count<Axis>()> axes_;
   std::array<ButtonState, magic_enum::enum_count<Button>()> buttons_;
+  std::array<std::function<void()>, magic_enum::enum_count<Button>()> pressed_callback_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr sub_;
 };
 
