@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -18,6 +19,7 @@ function(custom_executable target)
   add_executable(${target} main/${target}.cpp ${src_files} ${gencode_files})
   ament_target_dependencies(${target} 
     "rclcpp"
+    "tf2"
     "tf2_eigen"
     "std_msgs"
     "visualization_msgs"
