@@ -175,157 +175,180 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
-    - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.10000000149011612
-      Class: rviz_default_plugins/Pose
-      Color: 255; 25; 0
+    - Class: rviz_common/Group
+      Displays:
+        - Class: jsk_rviz_plugin/TargetVisualizer
+          Enabled: true
+          Name: TargetVisualizer
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /world_coord_pose
+          Value: true
+          alpha: 0.800000011920929
+          color: 25; 255; 240
+          radius: 0.029999999329447746
+          target name: target
+          type: Decoreted Circle
+        - Align Bottom: false
+          Background Alpha: 0.800000011920929
+          Background Color: 0; 0; 0
+          Class: jsk_rviz_plugin/String
+          Enabled: true
+          Foreground Alpha: 0.800000011920929
+          Foreground Color: 25; 255; 240
+          Name: DateString
+          Overtake Color Properties: false
+          Overtake Position Properties: true
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /rviz/date
+          Value: true
+          font: DejaVu Sans Mono
+          height: 30
+          left: 0
+          line width: 2
+          text size: 18
+          top: 0
+          width: 280
+        - Alpha: 1
+          Axes Length: 1
+          Axes Radius: 0.10000000149011612
+          Class: rviz_default_plugins/Pose
+          Color: 255; 25; 0
+          Enabled: true
+          Head Length: 0.05000000074505806
+          Head Radius: 0.05000000074505806
+          Name: InputPose
+          Shaft Length: 0.10000000149011612
+          Shaft Radius: 0.029999999329447746
+          Shape: Arrow
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /world_coord_pose
+          Value: true
+        - Class: rviz_common/Group
+          Displays:
+            - Class: jsk_rviz_plugin/LinearGauge
+              Enabled: true
+              Name: r
+              Show Value: true
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/r
+              Value: true
+              Vertical Gauge: false
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              border: true
+              foreground alpha: 0.699999988079071
+              foreground color: 25; 255; 240
+              height: 30
+              left: 68
+              linewidth: 1
+              max color: 255; 0; 0
+              max value: 0.8999999761581421
+              min value: 0.4000000059604645
+              show caption: true
+              text size: 14
+              top: 80
+              update interval: 0.03999999910593033
+              width: 270
+            - Class: jsk_rviz_plugin/LinearGauge
+              Enabled: true
+              Name: z
+              Show Value: true
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/z
+              Value: true
+              Vertical Gauge: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              border: true
+              foreground alpha: 0.699999988079071
+              foreground color: 25; 255; 240
+              height: 188
+              left: 28
+              linewidth: 1
+              max color: 255; 0; 0
+              max value: 0.15000000596046448
+              min value: 0
+              show caption: true
+              text size: 14
+              top: 80
+              update interval: 0.03999999910593033
+              width: 30
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: theta
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/theta
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.4000000059604645
+              foreground alpha 2: 0.30000001192092896
+              foreground color: 25; 255; 240
+              left: 68
+              max color: 255; 0; 0
+              max value: 180
+              min value: -180
+              show caption: true
+              size: 128
+              text size: 14
+              top: 128
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: phi
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/phi
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.4000000059604645
+              foreground alpha 2: 0.30000001192092896
+              foreground color: 25; 255; 240
+              left: 206
+              max color: 255; 0; 0
+              max value: 180
+              min value: -180
+              show caption: true
+              size: 128
+              text size: 14
+              top: 128
+          Enabled: true
+          Name: state viewer
       Enabled: true
-      Head Length: 0.05000000074505806
-      Head Radius: 0.05000000074505806
-      Name: InputPose
-      Shaft Length: 0.10000000149011612
-      Shaft Radius: 0.029999999329447746
-      Shape: Arrow
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /world_coord_pose
-      Value: true
-    - Class: jsk_rviz_plugin/PieChart
-      Enabled: true
-      Name: phi
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rviz/phi
-      Value: true
-      auto color change: false
-      background color: 0; 0; 0
-      backround alpha: 0
-      clockwise rotate direction: false
-      foreground alpha: 0.4000000059604645
-      foreground alpha 2: 0.30000001192092896
-      foreground color: 25; 255; 240
-      left: 206
-      max color: 255; 0; 0
-      max value: 180
-      min value: -180
-      show caption: true
-      size: 128
-      text size: 14
-      top: 128
-    - Class: jsk_rviz_plugin/PieChart
-      Enabled: true
-      Name: theta
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rviz/theta
-      Value: true
-      auto color change: false
-      background color: 0; 0; 0
-      backround alpha: 0
-      clockwise rotate direction: false
-      foreground alpha: 0.4000000059604645
-      foreground alpha 2: 0.30000001192092896
-      foreground color: 25; 255; 240
-      left: 68
-      max color: 255; 0; 0
-      max value: 180
-      min value: -180
-      show caption: true
-      size: 128
-      text size: 14
-      top: 128
-    - Class: jsk_rviz_plugin/LinearGauge
-      Enabled: true
-      Name: z
-      Show Value: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rviz/z
-      Value: true
-      Vertical Gauge: true
-      auto color change: false
-      background color: 0; 0; 0
-      backround alpha: 0
-      border: true
-      foreground alpha: 0.699999988079071
-      foreground color: 25; 255; 240
-      height: 188
-      left: 28
-      linewidth: 1
-      max color: 255; 0; 0
-      max value: 0.15000000596046448
-      min value: 0
-      show caption: true
-      text size: 14
-      top: 80
-      update interval: 0.03999999910593033
-      width: 30
-    - Class: jsk_rviz_plugin/LinearGauge
-      Enabled: true
-      Name: r
-      Show Value: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rviz/r
-      Value: true
-      Vertical Gauge: false
-      auto color change: false
-      background color: 0; 0; 0
-      backround alpha: 0
-      border: true
-      foreground alpha: 0.699999988079071
-      foreground color: 25; 255; 240
-      height: 30
-      left: 68
-      linewidth: 1
-      max color: 255; 0; 0
-      max value: 0.8999999761581421
-      min value: 0.4000000059604645
-      show caption: true
-      text size: 14
-      top: 80
-      update interval: 0.03999999910593033
-      width: 270
-    - Align Bottom: false
-      Background Alpha: 0.800000011920929
-      Background Color: 0; 0; 0
-      Class: jsk_rviz_plugin/String
-      Enabled: true
-      Foreground Alpha: 0.800000011920929
-      Foreground Color: 25; 255; 240
-      Name: DateString
-      Overtake Color Properties: false
-      Overtake Position Properties: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /rviz/date
-      Value: true
-      font: DejaVu Sans Mono
-      height: 30
-      left: 0
-      line width: 2
-      text size: 18
-      top: 0
-      width: 280
+      Name: jsk visualization
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -369,25 +392,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.136258840560913
+      Distance: 2.1461727619171143
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.20907612144947052
-        Y: 0.14121021330356598
-        Z: 0.04032802954316139
+        X: -0.5209174752235413
+        Y: 0.17399746179580688
+        Z: 0.1250322163105011
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6647968888282776
+      Pitch: 0.469797283411026
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.7573113441467285
+      Yaw: 4.96231746673584
     Saved: ~
 Window Geometry:
   Displays:
