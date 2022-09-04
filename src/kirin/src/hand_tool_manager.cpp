@@ -46,6 +46,7 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
   UpdateBellowsTransformVector(this->hand_state_);
 
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+  tf_broadcaster_->sendTransform(transform_vec_);
   marker_pub_ = create_publisher<Marker>("hand_marker", rclcpp::SystemDefaultsQoS());
   timer_ = create_wall_timer(10ms, timer_callback_);
   set_srv_ = create_service<SetHandState>("tool/set_hand_state", handle_set_hand_state_);
