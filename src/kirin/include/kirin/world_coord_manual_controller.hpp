@@ -17,6 +17,12 @@ using RPYTuple = std::tuple<double, double, double>;
 
 class WorldCoordManualController : public JoyController {
  public:
+  struct VelocityRatio {
+    double x;
+    double y;
+    double z;
+    double psi;
+  };
   explicit WorldCoordManualController(
     const std::string& node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~WorldCoordManualController();
@@ -29,6 +35,7 @@ class WorldCoordManualController : public JoyController {
   double psi_;
   std::string current_bellows_frame_;
   int ik_index{1};
+  VelocityRatio velocity_ratio;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;

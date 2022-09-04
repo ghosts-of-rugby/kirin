@@ -3,7 +3,7 @@ from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration, ThisLaunchFileDir
 
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -12,6 +12,10 @@ def generate_launch_description():
   kirin_package_path = get_package_share_path('kirin')
   urdf_path = kirin_package_path / 'urdf/kirin.urdf.xacro'
   rviz_config_path = kirin_package_path / 'rviz/kirin.rviz'
+
+  params_file = LaunchConfiguration(
+    'params', default=[ThisLaunchFileDir(), '/params.yaml'])
+
 
   # robot_state_publisher
   robot_description = ParameterValue(Command(['xacro ', str(urdf_path)]), value_type=str)
@@ -54,7 +58,8 @@ def generate_launch_description():
   )
 
   kirin_main_executor = Node(
-    package='kirin', executable='kirin_main_executor', output='screen'
+    package='kirin', executable='kirin_main_executor', output='screen',
+    parameters=[params_file]
   )
 
   jagariko_marker_publiser = Node(

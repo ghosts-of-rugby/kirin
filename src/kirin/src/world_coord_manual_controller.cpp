@@ -18,6 +18,10 @@ WorldCoordManualController::WorldCoordManualController(
   : JoyController(node_name, options),
     pos_(0.3, 0.1, 0.1), psi_(0.0), current_bellows_frame_{frame::kBellowsTop},
     timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)){
+  velocity_ratio.x = declare_parameter("velocity_ratio.x", 0.0);
+  velocity_ratio.y = declare_parameter("velocity_ratio.y", 0.0);
+  velocity_ratio.z = declare_parameter("velocity_ratio.z", 0.0);
+  velocity_ratio.psi = declare_parameter("velocity_ratio.psi", 0.0);
 
   // transform listener
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -60,16 +64,16 @@ WorldCoordManualController::~WorldCoordManualController(){}
 geometry_msgs::msg::Pose WorldCoordManualController::GetManualInput() {
   geometry_msgs::msg::Pose pose;
   Eigen::Vector3d vel(
-    this->GetAxis(JoyController::Axis::LStickY)* -1.0 * 0.3,
-    this->GetAxis(JoyController::Axis::LStickX)* 1.0 * 0.3,
-    this->GetAxis(JoyController::Axis::RStickX)* 1.0 * 0.2
+    this->GetAxis(JoyController::Axis::LStickY)* -1.0 * velocity_ratio.x,
+    this->GetAxis(JoyController::Axis::LStickX)* 1.0 * velocity_ratio.y,
+    this->GetAxis(JoyController::Axis::RStickX)* 1.0 * velocity_ratio.z
   );
   pos_ += vel*0.01; // 10ms loop
   pose.position = Eigen::toMsg(pos_);
 
   double left_trig = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
   double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  double omega = (left_trig - right_trig) * 0.3;
+  double omega = (left_trig - right_trig) * velocity_ratio.psi;
   psi_ += omega*0.01;
   Eigen::Quaterniond quat(Eigen::AngleAxisd(psi_, Eigen::Vector3d::UnitZ()));
   pose.orientation = Eigen::toMsg(quat);
@@ -161,7 +165,7 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   double r = CalcR(l, pos_.x(), pos_.y(), psi_);
   double theta = CalcTheta(l, pos_.x(), pos_.y(), psi_);
   double phi = CalcPhi(l, pos_.x(), pos_.y(), psi_);
-  RCLCPP_INFO(this->get_logger(), "r: %3f, theta: %3f, phi: %3f", r, theta, phi);
+  // RCLCPP_INFO(this->get_logger(), "r: %3f, theta: %3f, phi: %3f", r, theta, phi);
   joint_state->position = {
     theta, pos_.z()-z_offset, r-r_offset, phi-phi_offset, phi-phi_offset
   };

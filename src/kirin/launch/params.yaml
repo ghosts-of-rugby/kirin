@@ -1,0 +1,7 @@
+world_coord_controller:
+  ros__parameters:
+    velocity_ratio:
+      x: 0.3
+      y: 0.3
+      z: 0.2
+      psi: 0.3
