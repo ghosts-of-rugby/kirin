@@ -107,9 +107,7 @@ void HandToolManager::SetHandStateCallback(
 void HandToolManager::UpdateBellowsTransformVector(HandState hand_state) {
     double bellows_z = -0.042;
     transform_vec_.clear();
-    for(const auto& bellows_pos_tuple: bellows_map_.at(this->hand_state_)) {
-      const auto& [bellows_frame, pos] = bellows_pos_tuple;
-
+    for(const auto& [bellows_frame, pos]: bellows_map_.at(this->hand_state_)) {
       geometry_msgs::msg::TransformStamped t;
       t.header.stamp = this->get_clock()->now();
       t.header.frame_id = frame::kPhiLink;
