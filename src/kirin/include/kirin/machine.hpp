@@ -5,15 +5,16 @@
 namespace machine {
   // TODO: make temp true parameter
   /* phi rotation radius */
-  constexpr double kPhiRadius = 0.1; // (temp)
+  constexpr double kPhiRadius = 0.03979;
   /* motor rotation radius */
-  constexpr double kMotorRadius = 0.5; // (temp)
+  constexpr double kMotorRadius = 0.023875;
   /* theta gear ratio */
-  constexpr double kThetaGearRatio = 1.0; // (temp)
-  /* z gear ratio */
-  constexpr double kZGearRatio = 1.0; // (temp)
-  /* motor gear radius */
-  constexpr double kZGearRadius = 1.0; // (temp)
+  constexpr double kThetaGearRatio = 25./136.;
+  // /* z gear ratio */
+  // constexpr double kZGearRatio = 1.0; // (temp)
+  // /* motor gear radius */
+  // constexpr double kZGearRadius = 1.0; // (temp)
+  constexpr double kZRatio = 0.02387 / 2*M_PI;
 
 
   /* z offset from base axis to theta link */
