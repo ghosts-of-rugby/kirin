@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 WorldCoordManualController::WorldCoordManualController(
     const std::string& node_name, const rclcpp::NodeOptions& options)
   : JoyController(node_name, options),
-    pos_(0.3, 0.1, 0.1), psi_(0.0), current_bellows_frame_{frame::kBellowsTop},
+    pos_(0.546 + 0.05, 0.00, 0.127), psi_(0.0), current_bellows_frame_{frame::kBellowsTop},
     timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)){
   velocity_ratio.x = declare_parameter("velocity_ratio.x", 0.0);
   velocity_ratio.y = declare_parameter("velocity_ratio.y", 0.0);
@@ -206,13 +206,13 @@ double WorldCoordManualController::CalcR(double l, double x, double y, double ps
 double WorldCoordManualController::CalcPhi(double l, double x, double y, double psi) {
   double out[2];
   model::ik_phi(l, psi, x, y, out);
-  return out[ik_index];
+  return isnan(out[ik_index]) ? 0.0 : out[ik_index];
 }
 
 double WorldCoordManualController::CalcTheta(double l, double x, double y, double psi) {
   double out[2];
   model::ik_theta(l, psi, x, y, out);
-  return out[ik_index];
+  return isnan(out[ik_index]) ? 0.0 : out[ik_index];
 }
 
 double WorldCoordManualController::CalcX(double theta, double r, double phi, double l) {
