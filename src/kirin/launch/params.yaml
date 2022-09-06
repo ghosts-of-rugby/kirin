@@ -5,3 +5,8 @@ world_coord_controller:
       y: 0.3
       z: 0.2
       psi: 0.3
+
+joint_state_publisher:
+  ros__parameters:
+    rate: 100
+    source_list: ['manual_joint']
