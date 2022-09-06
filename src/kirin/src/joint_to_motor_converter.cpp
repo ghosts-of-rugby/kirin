@@ -11,7 +11,7 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
   double R_m = machine::kMotorRadius;
   double R_phi = machine::kPhiRadius;
   mat_motor_to_joint_ << 1./2.*R_m, 1./2.*R_m,
-                        R_m/R_phi, R_m/R_phi;
+                        R_m/R_phi, -R_m/R_phi;
   
   /* initial joint value when setting */
   initial_joint_ = {
@@ -40,12 +40,15 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
   };
 
   Eigen::Vector2d motor_vec = mat_motor_to_joint_.inverse() * r_phi_vec;
-  double theta_ratio = 1.0;
+  // RCLCPP_INFO(this->get_logger(), "inverse: %5f, %5f, %5f, %5f",
+  //     mat_motor_to_joint_.inverse()(0,0), mat_motor_to_joint_.inverse()(0,1),
+  //     mat_motor_to_joint_.inverse()(1,0), mat_motor_to_joint_.inverse()(1,1));
   MotorAngle motor_angle{
     .theta = joint.theta / machine::kThetaGearRatio,
-    .left = motor_vec(0),
-    .right = motor_vec(1),
-    .z = joint.z / machine::kZGearRatio * machine::kZGearRadius
+    .left = motor_vec.x(),
+    .right = motor_vec.y(),
+    // .z = joint.z / machine::kZGearRatio * machine::kZGearRadius
+    .z = joint.z / machine::kZRatio
   };
 
   auto motor_angle_msg = std::make_unique<Motor>();
