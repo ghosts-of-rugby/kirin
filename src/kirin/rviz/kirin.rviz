@@ -3,7 +3,9 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /jsk visualization1
+        - /jsk visualization1/motor viewer1
       Splitter Ratio: 0.5060483813285828
     Tree Height: 675
   - Class: rviz_common/Selection
@@ -47,6 +49,12 @@ Visualization Manager:
         All Enabled: true
         base_link:
           Value: true
+        bellows_left:
+          Value: true
+        bellows_right:
+          Value: true
+        bellows_top:
+          Value: true
         field:
           Value: true
         fix_base:
@@ -73,7 +81,12 @@ Visualization Manager:
               z_link:
                 r_link:
                   phi_link:
-                    {}
+                    bellows_left:
+                      {}
+                    bellows_right:
+                      {}
+                    bellows_top:
+                      {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -347,6 +360,110 @@ Visualization Manager:
               top: 128
           Enabled: true
           Name: state viewer
+        - Class: rviz_common/Group
+          Displays:
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Motor Left
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/left
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 85; 170; 0
+              left: 20
+              max color: 255; 0; 0
+              max value: 1000
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 320
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Motor Right
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/right
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 85; 170; 0
+              left: 20
+              max color: 255; 0; 0
+              max value: 1000
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 460
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Motor Theta
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/theta
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 85; 170; 0
+              left: 20
+              max color: 255; 0; 0
+              max value: 750
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 600
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Motor Z
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/z
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 85; 170; 0
+              left: 20
+              max color: 255; 0; 0
+              max value: 250
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 740
+          Enabled: true
+          Name: motor viewer
       Enabled: true
       Name: jsk visualization
   Enabled: true
@@ -392,25 +509,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.1461727619171143
+      Distance: 2.67037034034729
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.5209174752235413
-        Y: 0.17399746179580688
-        Z: 0.1250322163105011
+        X: -0.2770339548587799
+        Y: 0.13366015255451202
+        Z: 0.06500950455665588
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.469797283411026
+      Pitch: 1.124796986579895
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.96231746673584
+      Yaw: 4.602301120758057
     Saved: ~
 Window Geometry:
   Displays:
