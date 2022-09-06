@@ -11,7 +11,7 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
   double R_m = machine::kMotorRadius;
   double R_phi = machine::kPhiRadius;
   mat_motor_to_joint_ << 1./2.*R_m, 1./2.*R_m,
-                        R_m/R_phi, -R_m/R_phi;
+                        -R_m/R_phi, R_m/R_phi;
   
   /* initial joint value when setting */
   initial_joint_ = {
@@ -23,7 +23,7 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   joint_sub_ = create_subscription<JointState>("joint_states", qos, joint_callback_);
-  motor_angle_pub_ = create_publisher<Motor>("motor_angle", qos);
+  motor_pub_ = create_publisher<MotorStateVector>("motor/reference", qos);
 }
 
 void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) {
@@ -51,10 +51,10 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
     .z = joint.z / machine::kZRatio
   };
 
-  auto motor_angle_msg = std::make_unique<Motor>();
-  motor_angle_msg->theta = motor_angle.theta;
-  motor_angle_msg->left = motor_angle.left;
-  motor_angle_msg->right = motor_angle.right;
-  motor_angle_msg->z = motor_angle.z;
-  motor_angle_pub_->publish(std::move(motor_angle_msg));
+  auto motor_msg = std::make_unique<MotorStateVector>();
+  motor_msg->angle.theta = motor_angle.theta;
+  motor_msg->angle.left = motor_angle.left;
+  motor_msg->angle.right = motor_angle.right;
+  motor_msg->angle.z = motor_angle.z;
+  motor_pub_->publish(std::move(motor_msg));
 }

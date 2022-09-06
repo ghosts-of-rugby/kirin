@@ -4,31 +4,22 @@
 #include <Eigen/Core>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <kirin_msgs/msg/motor.hpp>
+#include <kirin_msgs/msg/motor_state_vector.hpp>
+
+#include "kirin/common_types.hpp"
+
 
 class JointToMotorConverter : public rclcpp::Node {
  public:
   using JointState = sensor_msgs::msg::JointState;
-  using Motor = kirin_msgs::msg::Motor;
-  struct Joint {
-    double theta; // [rad]
-    double z;     // [m]
-    double r;     // [m]
-    double phi;   // [rad]
-  };
-  struct MotorAngle { // [rad]
-    double theta;
-    double left;
-    double right;
-    double z;
-  };
+  using MotorStateVector = kirin_msgs::msg::MotorStateVector;
   explicit JointToMotorConverter(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   
  private:
   void JointStateCallback(const JointState::UniquePtr msg);
   std::function<void(const JointState::UniquePtr)> joint_callback_;
   rclcpp::Subscription<JointState>::SharedPtr joint_sub_;
-  rclcpp::Publisher<Motor>::SharedPtr motor_angle_pub_;
+  rclcpp::Publisher<MotorStateVector>::SharedPtr motor_pub_;
   Eigen::Matrix2d mat_motor_to_joint_;
   Joint initial_joint_;
 
