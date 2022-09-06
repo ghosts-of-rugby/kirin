@@ -13,7 +13,6 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
   current_motor_pub_ = create_publisher<MotorStateVector>("motor/current", qos);
 }
 
-
 void MotorController::MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg) {
   auto start = this->get_clock()->now();
 
@@ -55,11 +54,19 @@ void MotorController::MotorStateVectorReceiveCallback(const MotorStateVector::Un
 
 
   /* 受け取ったデータをpublish */
+  auto current_motor = std::make_unique<MotorStateVector>();
+  current_motor->angle.left = 0.0;
+  current_motor->angle.right = 0.0;
+  current_motor->angle.theta = 0.0;
+  current_motor->angle.z = 0.0;
+  current_motor->velocity.left = 0.0;
+  current_motor->velocity.right = 0.0;
+  current_motor->velocity.theta = 0.0;
+  current_motor->velocity.z = 0.0;
+  current_motor_pub_->publish(std::move(current_motor));
 
-
-  
   /* end */
   auto run_time = this->get_clock()->now() - start;
   auto run_us = run_time.to_chrono<std::chrono::microseconds>();
-  // RCLCPP_INFO(this->get_logger(), "motor communication run time: %4d [us]", run_us.count());
+  RCLCPP_INFO(this->get_logger(), "motor communication run time: %4d [us]", run_us.count());
 }
