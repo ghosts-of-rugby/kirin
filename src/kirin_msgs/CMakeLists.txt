@@ -15,9 +15,11 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Joint.msg"
+  "msg/AirState.msg"
   "msg/HandState.msg"
   "msg/Motor.msg"
   "msg/MotorStateVector.msg"
+  "srv/SetAirState.srv"
   "srv/SetHandState.srv"
   "srv/ToggleHandState.srv"
   DEPENDENCIES std_msgs sensor_msgs
