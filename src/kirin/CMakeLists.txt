@@ -3,6 +3,10 @@ project(kirin)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# ddt motor directory
+add_subdirectory(lib/ddt-motor)
+
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
@@ -27,11 +31,13 @@ function(custom_executable target)
     "kirin_msgs")
   install(TARGETS ${target}
     DESTINATION lib/${PROJECT_NAME})
+  target_link_libraries(${target} ddtmotor)
 endfunction()
 
 custom_executable(kirin_main_executor)
 custom_executable(jagariko_marker_publisher)
 custom_executable(jsk_visualize_node)
+custom_executable(test_motor_controller)
 
 include_directories(
   include
@@ -40,6 +46,7 @@ include_directories(
   /usr/local/MATLAB/R2022a/extern/include
   ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
 )
+
 
 install(DIRECTORY
     launch

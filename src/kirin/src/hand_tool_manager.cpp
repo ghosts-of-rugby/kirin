@@ -134,12 +134,12 @@ void HandToolManager::SetAirStateCallback(
     {Bellows::ExRight, static_cast<Air>(request->air_state.ex_right)},
   };
 
-  bool release = std::all_of(next_state.begin(), next_state.end(), [](Bellows name, Air state){
-    return state == Air::Off; 
-  });
-  if(release) {
-    /* release */
-  }
+  // bool release = std::all_of(next_state.begin(), next_state.end(), [](Bellows name, Air state){
+  //   return state == Air::Off; 
+  // });
+  // if(release) {
+  //   /* release */
+  // }
 
   // for(const auto& [key, next_value] : next_state) {
   //   release_flag &= static_cast<bool>(next_value);
