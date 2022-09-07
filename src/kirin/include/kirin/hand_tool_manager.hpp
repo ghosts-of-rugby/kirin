@@ -11,6 +11,9 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <kirin_msgs/srv/set_hand_state.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
+#include <kirin_msgs/srv/set_air_state.hpp>
+
+#include "kirin/common_types.hpp"
 
 enum class HandState {
   Shrink=0,
@@ -22,33 +25,42 @@ class HandToolManager: public rclcpp::Node {
   using Marker = visualization_msgs::msg::Marker;
   using SetHandState = kirin_msgs::srv::SetHandState;
   using ToggleHandState = kirin_msgs::srv::ToggleHandState;
+  using SetAirState = kirin_msgs::srv::SetAirState;
   using BellowsPositionTuple = std::tuple<std::string, Eigen::Vector2d>;
   explicit HandToolManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
  private:
-  void TimerCallback();
+  void MarkerTimerCallback();
   void SetHandStateCallback(const std::shared_ptr<rmw_request_id_t>,
                             const std::shared_ptr<SetHandState::Request>,
                             std::shared_ptr<SetHandState::Response>);
   void ToggleHandStateCallback(const std::shared_ptr<rmw_request_id_t>,
                                const std::shared_ptr<ToggleHandState::Request>,
                                std::shared_ptr<ToggleHandState::Response>);
+  void SetAirStateCallback(const std::shared_ptr<rmw_request_id_t>,
+                            const std::shared_ptr<SetAirState::Request>,
+                            std::shared_ptr<SetAirState::Response>);
   void UpdateBellowsTransformVector(HandState hand_state);
   HandState hand_state_;
   std::unordered_map<HandState, std::string> resource_map_;
   std::unordered_map<HandState, std::array<BellowsPositionTuple, 3>> bellows_map_;
+  std::unordered_map<kirin_type::BellowsName, kirin_type::AirState> air_map_;
   std::vector<geometry_msgs::msg::TransformStamped> transform_vec_;
-  std::function<void()> timer_callback_;
+  std::function<void()> marker_timer_callback_;
   std::function<void(const std::shared_ptr<rmw_request_id_t>,
                      const std::shared_ptr<SetHandState::Request>,
                      std::shared_ptr<SetHandState::Response>)> handle_set_hand_state_;
   std::function<void(const std::shared_ptr<rmw_request_id_t>,
                      const std::shared_ptr<ToggleHandState::Request>,
                      std::shared_ptr<ToggleHandState::Response>)> handle_toggle_hand_state_;
+  std::function<void(const std::shared_ptr<rmw_request_id_t>,
+                     const std::shared_ptr<SetAirState::Request>,
+                     std::shared_ptr<SetAirState::Response>)> handle_set_air_state_;
   rclcpp::Publisher<Marker>::SharedPtr marker_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Service<kirin_msgs::srv::SetHandState>::SharedPtr set_srv_;
-  rclcpp::Service<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_srv_;
+  rclcpp::Service<kirin_msgs::srv::SetHandState>::SharedPtr set_hand_srv_;
+  rclcpp::Service<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_srv_;
+  rclcpp::Service<kirin_msgs::srv::SetAirState>::SharedPtr set_air_srv_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
 };

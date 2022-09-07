@@ -1,4 +1,4 @@
-
+#include <algorithm>
 #include <magic_enum.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include "kirin/frame.hpp"
@@ -9,12 +9,15 @@ using namespace std::chrono_literals;
 HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
     : Node("hand_tool_manager", options),
       hand_state_(HandState::Shrink),
-      timer_callback_(std::bind(&HandToolManager::TimerCallback, this)),
+      marker_timer_callback_(std::bind(&HandToolManager::MarkerTimerCallback, this)),
       handle_set_hand_state_(
         std::bind(&HandToolManager::SetHandStateCallback, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
       handle_toggle_hand_state_(
         std::bind(&HandToolManager::ToggleHandStateCallback, this,
+                  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
+      handle_set_air_state_(
+        std::bind(&HandToolManager::SetAirStateCallback, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)){
 
   std::string mesh_directory = "package://kirin/resources/light";
@@ -44,17 +47,26 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
   };
   transform_vec_.reserve(3);
   UpdateBellowsTransformVector(this->hand_state_);
-
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
   tf_broadcaster_->sendTransform(transform_vec_);
+
+  air_map_ = {
+    {kirin_type::BellowsName::Top, kirin_type::AirState::Off},
+    {kirin_type::BellowsName::Left, kirin_type::AirState::Off},
+    {kirin_type::BellowsName::Right, kirin_type::AirState::Off},
+    {kirin_type::BellowsName::ExLeft, kirin_type::AirState::Off},
+    {kirin_type::BellowsName::ExRight, kirin_type::AirState::Off},
+  };
+
   marker_pub_ = create_publisher<Marker>("hand_marker", rclcpp::SystemDefaultsQoS());
-  timer_ = create_wall_timer(10ms, timer_callback_);
-  set_srv_ = create_service<SetHandState>("tool/set_hand_state", handle_set_hand_state_);
-  toggle_srv_ = create_service<ToggleHandState>(
+  timer_ = create_wall_timer(10ms, marker_timer_callback_);
+  set_hand_srv_ = create_service<SetHandState>("tool/set_hand_state", handle_set_hand_state_);
+  toggle_hand_srv_ = create_service<ToggleHandState>(
                   "tool/toggle_hand_state", handle_toggle_hand_state_);
+  set_air_srv_ = create_service<SetAirState>("tool/set_air_state", handle_set_air_state_);
 }
 
-void HandToolManager::TimerCallback() {
+void HandToolManager::MarkerTimerCallback() {
   auto marker_msg = std::make_unique<HandToolManager::Marker>();
   auto now = get_clock()->now();
   marker_msg->header.frame_id = frame::kPhiLink;
@@ -103,6 +115,44 @@ void HandToolManager::SetHandStateCallback(
     this->hand_state_ = next_state.value();
     response->result = true;
   }
+}
+
+void HandToolManager::SetAirStateCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<SetAirState::Request> request,
+    std::shared_ptr<SetAirState::Response> response) {
+  using Bellows = kirin_type::BellowsName;
+  using Air = kirin_type::AirState;
+
+  (void)request_header; // Lint Tool 対策
+
+  std::unordered_map<Bellows, Air> next_state{
+    {Bellows::Top, static_cast<Air>(request->air_state.top)},
+    {Bellows::Left, static_cast<Air>(request->air_state.left)},
+    {Bellows::Right, static_cast<Air>(request->air_state.right)},
+    {Bellows::ExLeft, static_cast<Air>(request->air_state.ex_left)},
+    {Bellows::ExRight, static_cast<Air>(request->air_state.ex_right)},
+  };
+
+  bool release = std::all_of(next_state.begin(), next_state.end(), [](Bellows name, Air state){
+    return state == Air::Off; 
+  });
+  if(release) {
+    /* release */
+  }
+
+  // for(const auto& [key, next_value] : next_state) {
+  //   release_flag &= static_cast<bool>(next_value);
+  //   if(air_map_.at(key) != next_value) {
+  //     RCLCPP_INFO(this->get_logger(), "AirState [%s]: '%s' -> '%s'",
+  //                 magic_enum::enum_name(this->hand_state_).data(),
+  //                 magic_enum::enum_name(next_state).data());
+  //   }
+  // }
+
+  /* Send Uart to Arduino */
+
+  response->result = true;
 }
 
 void HandToolManager::UpdateBellowsTransformVector(HandState hand_state) {
