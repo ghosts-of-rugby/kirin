@@ -14,7 +14,8 @@ int main(int argc, char* argv[]) {
   // rclcpp::executors::MultiThreadedExecutor exec;
   rclcpp::executors::MultiThreadedExecutor exec;
   // auto manual_controller_node = std::make_shared<DirectManualController>("manual_controller");
-  auto world_coord_manual_node = std::make_shared<WorldCoordManualController>("world_coord_controller");
+  auto world_coord_manual_node =
+      std::make_shared<WorldCoordManualController>("world_coord_controller");
   auto hand_tool_manager_node = std::make_shared<HandToolManager>();
   auto joint_to_motor_converter_node = std::make_shared<JointToMotorConverter>();
   auto motor_controller_node = std::make_shared<MotorController>();

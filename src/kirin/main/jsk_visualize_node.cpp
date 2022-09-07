@@ -8,35 +8,34 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <kirin_msgs/msg/motor_state_vector.hpp>
 
-class JskVisualizeNode: public rclcpp::Node {
+class JskVisualizeNode : public rclcpp::Node {
  public:
   explicit JskVisualizeNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-    : Node("jsk_visualize_node", options),
-      joint_callback_(std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1)),
-      motor_callback_(std::bind(&JskVisualizeNode::MotorCallback, this, std::placeholders::_1)),
-      timer_callback_(std::bind(&JskVisualizeNode::TimerCallback, this)){
-
-      using namespace std::chrono_literals;
-      rclcpp::QoS qos(rclcpp::KeepLast(10));
-      joint_sub_ = create_subscription<sensor_msgs::msg::JointState>(
-          "joint_states", qos, joint_callback_);
-      motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>(
-          "motor/reference", qos, motor_callback_);
-      theta_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/theta", qos);
-      phi_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/phi", qos);
-      z_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/z", qos);
-      r_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/r", qos);
-      motor_theta_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/theta", qos);
-      motor_left_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/left", qos);
-      motor_right_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/right", qos);
-      motor_z_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/z", qos);
-      date_string_pub_ = create_publisher<std_msgs::msg::String>("rviz/date", qos);
-      timer_ = create_wall_timer(10ms, timer_callback_);
+      : Node("jsk_visualize_node", options),
+        joint_callback_(std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1)),
+        motor_callback_(std::bind(&JskVisualizeNode::MotorCallback, this, std::placeholders::_1)),
+        timer_callback_(std::bind(&JskVisualizeNode::TimerCallback, this)) {
+    using namespace std::chrono_literals;
+    rclcpp::QoS qos(rclcpp::KeepLast(10));
+    joint_sub_ =
+        create_subscription<sensor_msgs::msg::JointState>("joint_states", qos, joint_callback_);
+    motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/reference", qos,
+                                                                        motor_callback_);
+    theta_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/theta", qos);
+    phi_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/phi", qos);
+    z_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/z", qos);
+    r_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/r", qos);
+    motor_theta_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/theta", qos);
+    motor_left_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/left", qos);
+    motor_right_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/right", qos);
+    motor_z_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/z", qos);
+    date_string_pub_ = create_publisher<std_msgs::msg::String>("rviz/date", qos);
+    timer_ = create_wall_timer(10ms, timer_callback_);
   }
 
  private:
   float Rad2Deg(float rad) { return rad * 180.0 / M_PI; }
-  std::string GetNowDateString(){
+  std::string GetNowDateString() {
     auto now = get_clock()->now();
     time_t t = now.seconds();
     tm* ptm = localtime(&t);
@@ -57,7 +56,7 @@ class JskVisualizeNode: public rclcpp::Node {
     float z = msg->position.at(1);
     float r = msg->position.at(2);
     float phi = msg->position.at(3);
-    
+
     auto theta_msg = std::make_unique<std_msgs::msg::Float32>();
     theta_msg->data = Rad2Deg(theta);
     theta_pie_chart_pub_->publish(std::move(theta_msg));
@@ -93,7 +92,6 @@ class JskVisualizeNode: public rclcpp::Node {
     z_msg->data = Rad2Deg(msg->angle.z);
     motor_z_pub_->publish(std::move(z_msg));
   }
-
 
   std::function<void(const sensor_msgs::msg::JointState::UniquePtr)> joint_callback_;
   std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> motor_callback_;

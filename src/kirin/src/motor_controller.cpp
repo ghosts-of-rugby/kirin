@@ -23,17 +23,14 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
       motor_right(uart, 0x06, 5ms),
       motor_left(uart, 0x09, 5ms),
       Node("motor_controller", options),
-      motor_callback_(
-          std::bind(&MotorController::MotorStateVectorReceiveCallback, this,
-                    std::placeholders::_1)) {
+      motor_callback_(std::bind(&MotorController::MotorStateVectorReceiveCallback, this,
+                                std::placeholders::_1)) {
   rclcpp::QoS qos(rclcpp::KeepLast(2));
-  motor_sub_ = create_subscription<MotorStateVector>("motor/reference", qos,
-                                                     motor_callback_);
+  motor_sub_ = create_subscription<MotorStateVector>("motor/reference", qos, motor_callback_);
   current_motor_pub_ = create_publisher<MotorStateVector>("motor/current", qos);
 }
 
-void MotorController::MotorStateVectorReceiveCallback(
-    const MotorStateVector::UniquePtr msg) {
+void MotorController::MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg) {
   auto start = this->get_clock()->now();
 
   // 各モーターの目標位置と目標速度の構造体
@@ -86,6 +83,5 @@ void MotorController::MotorStateVectorReceiveCallback(
   /* end */
   auto run_time = this->get_clock()->now() - start;
   auto run_us = run_time.to_chrono<std::chrono::microseconds>();
-  RCLCPP_INFO(this->get_logger(), "motor communication run time: %4d [us]",
-              run_us.count());
+  RCLCPP_INFO(this->get_logger(), "motor communication run time: %4d [us]", run_us.count());
 }

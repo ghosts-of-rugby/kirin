@@ -1,7 +1,6 @@
 #ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_JOY_CONTROLLER
 #define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_JOY_CONTROLLER
 
-
 #include <chrono>
 #include <cstdio>
 #include <memory>
@@ -39,8 +38,8 @@ class JoyController : public rclcpp::Node {
   };
 
   enum class ButtonState {
-    Released=0,
-    Pressed=1
+    Released = 0,
+    Pressed = 1
   };
 
  public:

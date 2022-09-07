@@ -6,8 +6,12 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/src/catchrobo/lib/magic_enum/include",
                 "${workspaceFolder}/src/catchrobo/src/kirin/include",
+                "${workspaceFolder}/src/catchrobo/src/kirin/lib/ddt-motor/include",
                 "${workspaceFolder}/install/kirin_msgs/include",
-                "/opt/ros/foxy/include"
+                "${workspaceFolder}/src/catchrobo/src/kirin/gencode",
+                "/opt/ros/foxy/include",
+                "/usr/include/eigen3",
+                "/usr/local/MATLAB/R2022a/extern/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

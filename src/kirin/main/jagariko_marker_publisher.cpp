@@ -5,7 +5,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
-
 class JagarikoMarkersPublisher : public rclcpp::Node {
  public:
   using Marker = visualization_msgs::msg::Marker;
@@ -14,42 +13,40 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   static constexpr size_t OUR_JAGARIKO_NUM = 16;
   static constexpr size_t SHARE_JAGARIKO_NUM = 9;
   static constexpr size_t JAGARIKO_NUM = OUR_JAGARIKO_NUM + SHARE_JAGARIKO_NUM;
-  static constexpr size_t BLOCK_NUM = (OUR_JAGARIKO_NUM-1)/3;
+  static constexpr size_t BLOCK_NUM = (OUR_JAGARIKO_NUM - 1) / 3;
 
-  explicit JagarikoMarkersPublisher(
-      const std::string& topic_name,
-      const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-    : Node("jagariko_marker_publisher", options) {
-
+  explicit JagarikoMarkersPublisher(const std::string& topic_name,
+                                    const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
+      : Node("jagariko_marker_publisher", options) {
     // our jaga
     float distance = 0.2;
-    float top_x = -1.0 * 0.4; // if red
-    float top_y = distance*2.5;
-    for(int l = 0; l<BLOCK_NUM; l++) {
-      jaga_poses.at(3*l + 0) = {top_x, top_y - l*distance};
-      jaga_poses.at(3*l + 1) = {top_x - distance/2.0, top_y - (l + 0.5)*distance};
-      jaga_poses.at(3*l + 2) = {top_x + distance/2.0, top_y - (l + 0.5)*distance};
+    float top_x = -1.0 * 0.4;  // if red
+    float top_y = distance * 2.5;
+    for (int l = 0; l < BLOCK_NUM; l++) {
+      jaga_poses.at(3 * l + 0) = {top_x, top_y - l * distance};
+      jaga_poses.at(3 * l + 1) = {top_x - distance / 2.0, top_y - (l + 0.5) * distance};
+      jaga_poses.at(3 * l + 2) = {top_x + distance / 2.0, top_y - (l + 0.5) * distance};
     }
-    jaga_poses.at(OUR_JAGARIKO_NUM-1) = {top_x, top_y - BLOCK_NUM*distance};
+    jaga_poses.at(OUR_JAGARIKO_NUM - 1) = {top_x, top_y - BLOCK_NUM * distance};
 
     // share jaga
     float share_distance = 0.14;
     float share_top_x = 0.0;
-    float share_top_y = float(SHARE_JAGARIKO_NUM-1)/2.0 * share_distance;
-    for(int l = 0; l<SHARE_JAGARIKO_NUM; l++) {
-      share_jaga_poses.at(l) = {share_top_x, share_top_y - l*share_distance};
+    float share_top_y = float(SHARE_JAGARIKO_NUM - 1) / 2.0 * share_distance;
+    for (int l = 0; l < SHARE_JAGARIKO_NUM; l++) {
+      share_jaga_poses.at(l) = {share_top_x, share_top_y - l * share_distance};
     }
 
     auto jagariko_pub_message = [this]() -> void {
       auto markers_msg = std::make_unique<MarkerArray>();
-      for(int i=0; i<OUR_JAGARIKO_NUM; i++) {
+      for (int i = 0; i < OUR_JAGARIKO_NUM; i++) {
         auto [x, y] = this->jaga_poses.at(i);
         markers_msg->markers.push_back(this->CreateJagarikoMarker(i, x, y, 0.0));
       }
-      for(int i=0; i<SHARE_JAGARIKO_NUM; i++) {
+      for (int i = 0; i < SHARE_JAGARIKO_NUM; i++) {
         auto [x, y] = this->share_jaga_poses.at(i);
         float share_z = 0.035;
-        markers_msg->markers.push_back(this->CreateJagarikoMarker(100+i, x, y, share_z));
+        markers_msg->markers.push_back(this->CreateJagarikoMarker(100 + i, x, y, share_z));
       }
 
       this->marker_pub_->publish(std::move(markers_msg));
@@ -88,7 +85,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     marker.color.g = 0.9;
     marker.color.b = 0.0;
     marker.color.a = 0.8;
-    
+
     return marker;
   }
 
@@ -97,7 +94,6 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
 
   rclcpp::Publisher<MarkerArray>::SharedPtr marker_pub_;
   rclcpp::TimerBase::SharedPtr timer_;
-
 };
 
 int main(int argc, char* argv[]) {

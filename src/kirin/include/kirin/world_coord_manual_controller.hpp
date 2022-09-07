@@ -23,8 +23,8 @@ class WorldCoordManualController : public JoyController {
     double z;
     double psi;
   };
-  explicit WorldCoordManualController(
-    const std::string& node_name, const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit WorldCoordManualController(const std::string& node_name,
+                                      const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   ~WorldCoordManualController();
 
  private:
@@ -46,8 +46,8 @@ class WorldCoordManualController : public JoyController {
   rclcpp::TimerBase::SharedPtr timer_;
 
   inline geometry_msgs::msg::Pose GetManualInput();
-  inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(
-      const std::string& parent_frame, const std::string& child_frame);
+  inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
+                                                               const std::string& child_frame);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
   void SetCurrentBellows(const std::string& bellows_frame);
   void ChangeBellows();
@@ -59,8 +59,6 @@ class WorldCoordManualController : public JoyController {
   double CalcY(double theta, double r, double phi, double l);
   double CalcPsi(double theta, double phi);
   void TimerCallback();
-  
 };
-
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */

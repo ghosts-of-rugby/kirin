@@ -11,14 +11,14 @@
 class MotorController : public rclcpp::Node {
  public:
   using MotorStateVector = kirin_msgs::msg::MotorStateVector;
-  explicit MotorController(
-      const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+  explicit MotorController(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
  private:
   std::shared_ptr<ddt::Uart> uart;
   ddt::AngleFilter angle_filter_right, angle_filter_left;
   ddt::Motor motor_right, motor_left;
-  double motor_right_input = 0.0, motor_left_input = 0.0;
+  double motor_right_input = 0.0;
+  double motor_left_input = 0.0;
 
   void MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg);
   std::function<void(const MotorStateVector::UniquePtr)> motor_callback_;

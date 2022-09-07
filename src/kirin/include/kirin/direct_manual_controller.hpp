@@ -1,11 +1,11 @@
 #ifndef SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER
 #define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER
 
-#include <string>
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/joy.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
 #include <kirin_msgs/msg/joint.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
+#include <sensor_msgs/msg/joy.hpp>
+#include <string>
 
 #include "kirin/joy_controller.hpp"
 
@@ -27,6 +27,5 @@ class DirectManualController : public JoyController {
   float r_{0.0};
   float phi_{0.0};
 };
-
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_DIRECT_MANUAL_CONTROLLER */
