@@ -1,3 +1,6 @@
 [submodule "lib/magic_enum"]
 	path = lib/magic_enum
 	url = git@github.com:Neargye/magic_enum.git
+[submodule "src/kirin/lib/ddt-motor"]
+	path = src/kirin/lib/ddt-motor
+	url = git@github.com:ghosts-of-rugby/ddt-motor.git
