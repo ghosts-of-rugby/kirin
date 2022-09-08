@@ -11,6 +11,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
+#include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/joy_controller.hpp"
 
 using RPYTuple = std::tuple<double, double, double>;
@@ -36,11 +37,13 @@ class WorldCoordManualController : public JoyController {
   std::string current_bellows_frame_;
   int ik_index{1};
   VelocityRatio velocity_ratio;
+  bool is_air_on{false};
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
+  rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;

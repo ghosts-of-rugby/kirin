@@ -2,6 +2,7 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
+#include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/frame.hpp"
 #include "kirin/world_coord_manual_controller.hpp"
 #include "ik_r.h"
@@ -46,6 +47,25 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     };
 
     auto future_result = toggle_hand_state_client_->async_send_request(request, response_callback);
+  });
+
+  this->RegisterButtonPressedCallback(Button::X, [this]() -> void {
+    auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
+    request->air_state.left = !is_air_on;
+    request->air_state.right = !is_air_on;
+    request->air_state.top = !is_air_on;
+    request->air_state.ex_left = false;
+    request->air_state.ex_right = false;
+    request->air_state.ex_right = !is_air_on;
+
+    is_air_on = !is_air_on;
+    using ResponseFuture = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
+    auto response_callback = [this](ResponseFuture future) {
+      auto response = future.get();
+      // if(response->result) RCLCPP_INFO(this->get_logger(), "Successfully Hand State Changed");
+    };
+
+    auto future_result = set_air_state_client_->async_send_request(request, response_callback);
   });
 
   // this->RegisterButtonPressedCallback(
