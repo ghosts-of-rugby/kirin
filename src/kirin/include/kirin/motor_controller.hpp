@@ -17,8 +17,9 @@ class MotorController : public rclcpp::Node {
   std::shared_ptr<ddt::Uart> uart;
   ddt::AngleFilter angle_filter_right, angle_filter_left;
   ddt::Motor motor_right, motor_left;
+  double max_speed, kp, ki, kd;
   double motor_right_input = 0.0;
-  double motor_left_input = 0.0;
+  double motor_left_input  = 0.0;
 
   void MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg);
   std::function<void(const MotorStateVector::UniquePtr)> motor_callback_;

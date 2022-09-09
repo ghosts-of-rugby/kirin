@@ -8,5 +8,13 @@ world_coord_controller:
 
 joint_state_publisher:
   ros__parameters:
-    rate: 100
+    rate: 50
     source_list: ['manual_joint']
+
+hand_tool_manager:
+  ros__parameters:
+    max_speed: 5.0
+    pid:
+      Kp: 5.0
+      Ki: 0.0
+      Kd: 0.0
