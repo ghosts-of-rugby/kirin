@@ -3,17 +3,9 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
-#include "kirin/frame.hpp"
 #include "kirin/world_coord_manual_controller.hpp"
-#include "ik_r.h"
-#include "ik_phi.h"
-#include "ik_theta.h"
-#include "fk_x.h"
-#include "fk_y.h"
-#include "fk_psi.h"
-#include "dr.h"
-#include "dtheta.h"
-#include "dphi.h"
+#include "kirin/frame.hpp"
+#include "kirin/machine.hpp"
 
 using namespace std::chrono_literals;
 
@@ -185,9 +177,9 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   static double pre_phi = 0.0;
 
 
-  double r = CalcR(l, pos_.x(), pos_.y(), psi_);
-  double theta = CalcTheta(l, pos_.x(), pos_.y(), psi_);
-  double phi = CalcPhi(l, pos_.x(), pos_.y(), psi_);
+  double r = model::CalcR(l, pos_.x(), pos_.y(), psi_);
+  double theta = model::CalcTheta(l, pos_.x(), pos_.y(), psi_);
+  double phi = model::CalcPhi(l, pos_.x(), pos_.y(), psi_);
 
   /* check */
   double a_dr = (r - pre_r)/0.02;
@@ -197,9 +189,9 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   pre_theta = theta;
   pre_phi = phi;
 
-  double dr = CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dtheta = CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dphi = CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dr = model::CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dphi = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
 
   RCLCPP_INFO(this->get_logger(),
               "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
@@ -234,57 +226,4 @@ void WorldCoordManualController::TimerCallback() {
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
-}
-
-double WorldCoordManualController::CalcR(double l, double x, double y, double psi) {
-  double out[2];
-  model::ik_r(l, psi, x, y, out);
-  return out[ik_index];
-}
-
-double WorldCoordManualController::CalcPhi(double l, double x, double y, double psi) {
-  static double pre = 0.0;
-  double out[2];
-  model::ik_phi(l, psi, x, y, out);
-  double ret = out[ik_index];
-  if (isnan(ret)) ret = 0.0;
-  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
-  pre = ret;
-  return ret;
-}
-
-double WorldCoordManualController::CalcTheta(double l, double x, double y, double psi) {
-  static double pre = 0.0;
-  double out[2];
-  model::ik_theta(l, psi, x, y, out);
-  double ret = out[ik_index];
-  if (isnan(ret)) ret = 0.0;
-  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
-  pre = ret;
-  return ret;
-}
-
-double WorldCoordManualController::CalcX(double theta, double r, double phi, double l) {
-  return model::fk_x(l, phi, r, theta);
-}
-
-double WorldCoordManualController::CalcY(double theta, double r, double phi, double l) {
-  return model::fk_y(l, phi, r, theta);
-}
-
-double WorldCoordManualController::CalcPsi(double theta, double phi) {
-  return model::fk_psi(phi, theta);
-}
-
-double WorldCoordManualController::CalcRVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dr(dpsi, dx, dy, l, phi, theta);
-}
-double WorldCoordManualController::CalcPhiVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dphi(dpsi, dx, dy, l, phi, r, theta);
-}
-double WorldCoordManualController::CalcThetaVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dtheta(dpsi, dx, dy, l, phi, r, theta);
 }

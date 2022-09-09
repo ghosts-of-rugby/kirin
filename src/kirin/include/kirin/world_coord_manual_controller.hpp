@@ -38,7 +38,6 @@ class WorldCoordManualController : public JoyController {
   double dpsi_;
   int loop_ms_{20};
   std::string current_bellows_frame_;
-  int ik_index{1};
   VelocityRatio velocity_ratio;
   bool is_air_on{false};
 
@@ -58,17 +57,6 @@ class WorldCoordManualController : public JoyController {
   void SetCurrentBellows(const std::string& bellows_frame);
   void ChangeBellows();
   void PublishJointState(double l, double phi_offset);
-  double CalcR(double l, double x, double y, double psi);
-  double CalcPhi(double l, double x, double y, double psi);
-  double CalcTheta(double l, double x, double y, double psi);
-  double CalcX(double theta, double r, double phi, double l);
-  double CalcY(double theta, double r, double phi, double l);
-  double CalcPsi(double theta, double phi);
-  double CalcRVel(double l, double dx, double dy, double dpsi, double r, double theta, double phi);
-  double CalcPhiVel(
-      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
-  double CalcThetaVel(
-      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
   void TimerCallback();
 };
 

@@ -2,6 +2,15 @@
 #define SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MACHINE
 
 #include <math.h>
+#include "ik_r.h"
+#include "ik_phi.h"
+#include "ik_theta.h"
+#include "fk_x.h"
+#include "fk_y.h"
+#include "fk_psi.h"
+#include "dr.h"
+#include "dtheta.h"
+#include "dphi.h"
 
 // TODO: obtain mathine params from URDF file
 namespace machine {
@@ -45,5 +54,19 @@ constexpr double kExtend_D = 0.14;
 }  // namespace bellows
 
 }  // namespace machine
+
+namespace model {
+/* model calculation */
+double CalcR(double l, double x, double y, double psi);
+double CalcPhi(double l, double x, double y, double psi);
+double CalcTheta(double l, double x, double y, double psi);
+double CalcX(double theta, double r, double phi, double l);
+double CalcY(double theta, double r, double phi, double l);
+double CalcPsi(double theta, double phi);
+double CalcRVel(double l, double dx, double dy, double dpsi, double r, double theta, double phi);
+double CalcPhiVel(double l, double dx, double dy, double dpsi, double r, double theta, double phi);
+double CalcThetaVel(
+    double l, double dx, double dy, double dpsi, double r, double theta, double phi);
+}  // namespace model
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MACHINE */
