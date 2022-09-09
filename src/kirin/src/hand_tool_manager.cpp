@@ -54,11 +54,11 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
   tf_broadcaster_->sendTransform(transform_vec_);
 
   air_map_ = {
-      {kirin_type::BellowsName::Top,     kirin_type::AirState::Off},
-      {kirin_type::BellowsName::Left,    kirin_type::AirState::Off},
-      {kirin_type::BellowsName::Right,   kirin_type::AirState::Off},
-      {kirin_type::BellowsName::ExLeft,  kirin_type::AirState::Off},
-      {kirin_type::BellowsName::ExRight, kirin_type::AirState::Off},
+      {kirin_types::BellowsName::Top,     kirin_types::AirState::Off},
+      {kirin_types::BellowsName::Left,    kirin_types::AirState::Off},
+      {kirin_types::BellowsName::Right,   kirin_types::AirState::Off},
+      {kirin_types::BellowsName::ExLeft,  kirin_types::AirState::Off},
+      {kirin_types::BellowsName::ExRight, kirin_types::AirState::Off},
   };
 
   marker_pub_   = create_publisher<Marker>("hand_marker", rclcpp::SystemDefaultsQoS());
@@ -163,8 +163,8 @@ void HandToolManager::ToggleHandStateCallback(
 void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t> request_header,
                                           const std::shared_ptr<SetAirState::Request> request,
                                           std::shared_ptr<SetAirState::Response> response) {
-  using Bellows = kirin_type::BellowsName;
-  using Air     = kirin_type::AirState;
+  using Bellows = kirin_types::BellowsName;
+  using Air     = kirin_types::AirState;
 
   (void)request_header;  // Lint Tool 対策
 
