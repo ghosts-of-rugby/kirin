@@ -38,6 +38,7 @@ custom_executable(kirin_main_executor)
 custom_executable(jagariko_marker_publisher)
 custom_executable(jsk_visualize_node)
 custom_executable(test_motor_controller)
+custom_executable(test_hand_tool_manager)
 
 include_directories(
   include
