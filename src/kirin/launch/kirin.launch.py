@@ -31,7 +31,11 @@ def generate_launch_description():
     parameters=[params_file]
   )
 
-  joy_node = Node(package='joy', executable='joy_node')
+  joy_node = Node(
+    package='joy',
+    executable='joy_node',
+    parameters=[params_file]
+  )
   
   # arg にする
   red = 1
