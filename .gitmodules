@@ -1,5 +1,5 @@
 [submodule "lib/magic_enum"]
-	path = lib/magic_enum
+	path = src/kirin/lib/magic_enum
 	url = git@github.com:Neargye/magic_enum.git
 [submodule "src/kirin/lib/ddt-motor"]
 	path = src/kirin/lib/ddt-motor
