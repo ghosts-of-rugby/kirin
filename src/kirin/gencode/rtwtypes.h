@@ -5,7 +5,7 @@
 //
 // rtwtypes.h
 //
-// Code generation for function 'ik_r'
+// Code generation for function 'dr'
 //
 
 #ifndef RTWTYPES_H
