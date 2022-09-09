@@ -35,26 +35,26 @@ void MotorController::MotorStateVectorReceiveCallback(const MotorStateVector::Un
   MotorAngle angle{
       .theta = msg->angle.theta,
       .left  = msg->angle.left,   // 7.0
-      .right = msg->angle.right,  // -7.0
+      .right = -msg->angle.right,  // -7.0
       .z     = msg->angle.z,
   };
-  // MotorAngle velcity{
-  //   .theta = msg->velocity.theta,
-  //   .left = msg->velocity.left,
-  //   .right = msg->velocity.right,
-  //   .z = msg->velocity.z
-  // };
+  MotorAngle velocity{
+    .theta = msg->velocity.theta,
+    .left = msg->velocity.left,
+    .right = -msg->velocity.right,
+    .z = msg->velocity.z
+  };
 
   /* velocityをffにつかいつつ，angleをPID制御 */
   auto motor_state_right = motor_right.DriveVelocity(motor_right_input);
   auto motor_state_left  = motor_left.DriveVelocity(motor_left_input);
 
   if (motor_state_right.has_value() && motor_state_left.has_value()) {
-    double angle_right = angle_filter_right.Update(motor_state_right->angle);
-    double angle_left  = angle_filter_left.Update(motor_state_left->angle);
-    motor_right_input  = -this->kp * (angle.right - angle_right);
+    angle_right = angle_filter_right.Update(motor_state_right->angle);
+    angle_left  = angle_filter_left.Update(motor_state_left->angle);
+    motor_right_input  = -(this->kp * (angle.right - angle_right) + velocity.right);
     motor_right_input  = std::clamp(motor_right_input, -max_speed, max_speed);
-    motor_left_input   = -this->kp * (angle.left - angle_left);
+    motor_left_input   = -(this->kp * (angle.left - angle_left) + velocity.left);
     motor_left_input   = std::clamp(motor_left_input, -max_speed, max_speed);
   }
 
@@ -66,12 +66,12 @@ void MotorController::MotorStateVectorReceiveCallback(const MotorStateVector::Un
 
   /* 受け取ったデータをpublish */
   auto current_motor            = std::make_unique<MotorStateVector>();
-  current_motor->angle.left     = 0.0;
-  current_motor->angle.right    = 0.0;
+  current_motor->angle.left     = angle_right;
+  current_motor->angle.right    = angle_left;
   current_motor->angle.theta    = 0.0;
   current_motor->angle.z        = 0.0;
-  current_motor->velocity.left  = 0.0;
-  current_motor->velocity.right = 0.0;
+  current_motor->velocity.left = -(this->kp * (angle.left - angle_left) + velocity.left);
+  current_motor->velocity.right = -(this->kp * (angle.right - angle_right) + velocity.right);
   current_motor->velocity.theta = 0.0;
   current_motor->velocity.z     = 0.0;
   current_motor_pub_->publish(std::move(current_motor));
