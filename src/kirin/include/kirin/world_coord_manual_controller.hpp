@@ -13,6 +13,7 @@
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/joy_controller.hpp"
+#include "kirin/common_types.hpp"
 
 using RPYTuple = std::tuple<double, double, double>;
 
@@ -40,6 +41,7 @@ class WorldCoordManualController : public JoyController {
   std::string current_bellows_frame_;
   VelocityRatio velocity_ratio;
   bool is_air_on{false};
+  kirin_types::HandState current_state_;
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
@@ -58,6 +60,8 @@ class WorldCoordManualController : public JoyController {
   void ChangeBellows();
   void PublishJointState(double l, double phi_offset);
   void TimerCallback();
+  void ChangePumpStateClientRequest();
+  void ChangeHandStateClientRequest();
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */

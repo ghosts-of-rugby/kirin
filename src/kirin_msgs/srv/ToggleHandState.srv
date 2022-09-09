@@ -1,3 +1,4 @@
 bool toggle
 ---
-bool result
+bool success
+HandState current_state

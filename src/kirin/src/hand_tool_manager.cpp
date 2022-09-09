@@ -145,7 +145,7 @@ void HandToolManager::ToggleHandStateCallback(
   bool success = SendDataToArduino(data);
 
   if (!success) {  // send failed
-    response->result = false;
+    response->success = false;
     return;
   }
 
@@ -157,7 +157,10 @@ void HandToolManager::ToggleHandStateCallback(
   // update transform
   UpdateBellowsTransformVector(this->hand_state_);
 
-  response->result = true;
+  kirin_msgs::msg::HandState ret;
+  ret.value = static_cast<int>(this->hand_state_);
+  response->current_state = ret;
+  response->success = true;
 }
 
 void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t> request_header,
@@ -190,6 +193,8 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
   bool success = SendDataToArduino(data);
 
   if (success) {
+    if(release) RCLCPP_INFO(this->get_logger(), "Air Released!");
+  
     for (const auto& [key, next_value] : next_state) {
       if (air_map_.at(key) != next_value) {
         RCLCPP_INFO(this->get_logger(), "AirState [%s]: '%s' -> '%s'",

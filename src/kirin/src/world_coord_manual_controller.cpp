@@ -6,6 +6,7 @@
 #include "kirin/world_coord_manual_controller.hpp"
 #include "kirin/frame.hpp"
 #include "kirin/machine.hpp"
+#include <iostream>
 
 using namespace std::chrono_literals;
 
@@ -33,37 +34,11 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     std::this_thread::sleep_for(300ms);
   }
 
-  this->RegisterButtonPressedCallback(Button::A, [this]() -> void {
-    auto request = std::make_shared<kirin_msgs::srv::ToggleHandState::Request>();
-    request->toggle = true;
+  this->RegisterButtonPressedCallback(
+    Button::A, std::bind(&WorldCoordManualController::ChangeHandStateClientRequest, this));
 
-    using ResponseFuture = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
-    auto response_callback = [this](ResponseFuture future) {
-      auto response = future.get();
-      // if(response->result) RCLCPP_INFO(this->get_logger(), "Successfully Hand State Changed");
-    };
-
-    auto future_result = toggle_hand_state_client_->async_send_request(request, response_callback);
-  });
-
-  this->RegisterButtonPressedCallback(Button::X, [this]() -> void {
-    auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
-    request->air_state.left = !is_air_on;
-    request->air_state.right = !is_air_on;
-    request->air_state.top = !is_air_on;
-    request->air_state.ex_left = false;
-    request->air_state.ex_right = false;
-    request->air_state.ex_right = !is_air_on;
-
-    is_air_on = !is_air_on;
-    using ResponseFuture = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
-    auto response_callback = [this](ResponseFuture future) {
-      auto response = future.get();
-      // if(response->result) RCLCPP_INFO(this->get_logger(), "Successfully Hand State Changed");
-    };
-
-    auto future_result = set_air_state_client_->async_send_request(request, response_callback);
-  });
+  this->RegisterButtonPressedCallback(
+    Button::X, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
   // this->RegisterButtonPressedCallback(
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
@@ -75,6 +50,8 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   timer_ = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_ =
       create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
+  set_air_state_client_ =
+      create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
 }
 
 WorldCoordManualController::~WorldCoordManualController() {}
@@ -193,9 +170,9 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
   double dphi = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
 
-  RCLCPP_INFO(this->get_logger(),
-              "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
-              a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
+  // RCLCPP_INFO(this->get_logger(),
+  //             "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
+  //             a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
 
   joint_state->position = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset,
                            phi - phi_offset};
@@ -226,4 +203,38 @@ void WorldCoordManualController::TimerCallback() {
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
+}
+
+void WorldCoordManualController::ChangeHandStateClientRequest() {
+  auto request = std::make_shared<kirin_msgs::srv::ToggleHandState::Request>();
+  request->toggle = true;
+
+  using ResponseFuture = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response = future.get();
+    this->current_state_ = (response->current_state.value == kirin_msgs::msg::HandState::EXTEND) ? kirin_types::HandState::Extend : kirin_types::HandState::Shrink;
+    // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
+  };
+
+  auto future_result = toggle_hand_state_client_->async_send_request(request, response_callback);
+}
+
+void WorldCoordManualController::ChangePumpStateClientRequest() {
+  auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
+
+  auto next_state = !is_air_on;
+  request->air_state.left = next_state;
+  request->air_state.right = next_state;
+  request->air_state.top = next_state;
+  request->air_state.ex_left = (current_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.ex_right = (current_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.release = !next_state;
+
+  using ResponseFuture = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
+  auto response_callback = [this, next_state](ResponseFuture future) {
+    auto response = future.get();
+    if(response->result) this->is_air_on = next_state;
+  };
+
+  auto future_result = set_air_state_client_->async_send_request(request, response_callback);
 }
