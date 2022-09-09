@@ -18,6 +18,8 @@ class MotorController : public rclcpp::Node {
   ddt::AngleFilter angle_filter_right, angle_filter_left;
   ddt::Motor motor_right, motor_left;
   double max_speed, kp, ki, kd;
+  double angle_right = 0.0;
+  double angle_left = 0.0;
   double motor_right_input = 0.0;
   double motor_left_input  = 0.0;
 

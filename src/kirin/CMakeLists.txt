@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 # ddt motor directory
 add_subdirectory(lib/ddt-motor)
 
+# magic enum
+add_subdirectory(lib/magic_enum)
+
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -14,6 +17,7 @@ find_package(tf2_eigen REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 file(GLOB src_files src/*.cpp)
 file(GLOB gencode_files gencode/*.cpp)
@@ -28,10 +32,16 @@ function(custom_executable target)
     "std_msgs"
     "visualization_msgs"
     "geometry_msgs"
-    "kirin_msgs")
+    "kirin_msgs"
+  )
   install(TARGETS ${target}
-    DESTINATION lib/${PROJECT_NAME})
-  target_link_libraries(${target} ddtmotor)
+    DESTINATION lib/${PROJECT_NAME}
+  )
+  target_link_libraries(${target}
+    ddtmotor
+    magic_enum
+    ${Eigen3_LIBRARIES}
+  )
 endfunction()
 
 custom_executable(kirin_main_executor)
@@ -43,8 +53,8 @@ custom_executable(test_hand_tool_manager)
 include_directories(
   include
   gencode
-  /usr/include/eigen3
-  /usr/local/MATLAB/R2022a/extern/include
+  /usr/local/MATLAB/R2020a/extern/include
+  ${Eigen3_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
 )
 
