@@ -1,0 +1,29 @@
+# ベースフォーマットスタイル
+BasedOnStyle: Google
+
+# Enumを1行にしない
+AllowShortEnumsOnASingleLine: false
+
+# 構造体のformat
+AlignArrayOfStructures: Left
+
+# = の位置揃える
+AlignConsecutiveAssignments: AcrossComments
+
+# 短いif文は一行にまとめる
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+
+# 短いlambda文は一行にまとめる
+AllowShortLambdasOnASingleLine: All
+
+# 関数定義の引数が1行にならない場合は1行ずつ改行する
+BinPackParameters: false
+
+# 二項演算子(=, +, - など)の前で常に改行
+BreakBeforeBinaryOperators: All
+
+# アルファベットCからの設定まだ
+
+
+# 1行制限
+ColumnLimit: 100
