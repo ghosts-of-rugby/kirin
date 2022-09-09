@@ -13,7 +13,7 @@ joint_state_publisher:
 
 joy_node:
   ros__parameters:
-    autorepeat_rate: 50  # [Hz]
+    autorepeat_rate: 50.0  # [Hz]
     # coalesce_interval_ms: 20  # [ms]
 
 hand_tool_manager:

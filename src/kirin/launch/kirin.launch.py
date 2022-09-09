@@ -39,7 +39,7 @@ def generate_launch_description():
   
   # arg にする
   red = 1
-  base_position = [red * -0.9, 0.1, 0]
+  base_position = [red * -0.95, 0.0, 0]
   base_orientation = [0.0, 0.0, 0.0, 1.0]
   base_publisher = Node(
     package="tf2_ros",
