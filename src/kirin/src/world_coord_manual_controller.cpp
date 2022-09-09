@@ -11,6 +11,9 @@
 #include "fk_x.h"
 #include "fk_y.h"
 #include "fk_psi.h"
+#include "dr.h"
+#include "dtheta.h"
+#include "dphi.h"
 
 using namespace std::chrono_literals;
 
@@ -18,7 +21,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
                                                        const rclcpp::NodeOptions& options)
     : JoyController(node_name, options),
       pos_(0.546 + 0.05, 0.00, 0.127),
+      vel_(0.0, 0.0, 0.0),
       psi_(0.0),
+      dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
   velocity_ratio.x = declare_parameter("velocity_ratio.x", 0.0);
@@ -75,7 +80,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   world_coord_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
   joint_pub_ = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
   current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame_", qos);
-  timer_ = create_wall_timer(10ms, timer_callback_);
+  timer_ = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_ =
       create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
 }
@@ -84,16 +89,16 @@ WorldCoordManualController::~WorldCoordManualController() {}
 
 geometry_msgs::msg::Pose WorldCoordManualController::GetManualInput() {
   geometry_msgs::msg::Pose pose;
-  Eigen::Vector3d vel(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
+  vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
                       this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
                       this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
-  pos_ += vel * 0.01;  // 10ms loop
+  pos_ += vel_ * loop_ms_*0.001;  // 10ms loop
   pose.position = Eigen::toMsg(pos_);
 
   double left_trig = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
   double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  double omega = (left_trig - right_trig) * velocity_ratio.psi;
-  psi_ += omega * 0.01;
+  dpsi_ = (left_trig - right_trig) * velocity_ratio.psi;
+  psi_ += dpsi_ * loop_ms_*0.001;
   Eigen::Quaterniond quat(Eigen::AngleAxisd(psi_, Eigen::Vector3d::UnitZ()));
   pose.orientation = Eigen::toMsg(quat);
 
@@ -171,14 +176,38 @@ void WorldCoordManualController::ChangeBellows() {
 void WorldCoordManualController::PublishJointState(double l, double phi_offset) {
   auto joint_state = std::make_unique<sensor_msgs::msg::JointState>();
   joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
+
   double r_offset = 0.345 + 0.201;
   double z_offset = 0.1;
+
+  static double pre_r = 0.0;
+  static double pre_theta = 0.0;
+  static double pre_phi = 0.0;
+
+
   double r = CalcR(l, pos_.x(), pos_.y(), psi_);
   double theta = CalcTheta(l, pos_.x(), pos_.y(), psi_);
   double phi = CalcPhi(l, pos_.x(), pos_.y(), psi_);
-  // RCLCPP_INFO(this->get_logger(), "r: %3f, theta: %3f, phi: %3f", r, theta, phi);
+
+  /* check */
+  double a_dr = (r - pre_r)/0.02;
+  double a_dtheta = (theta - pre_theta)/0.02;
+  double a_dphi = (phi - pre_phi)/0.02;
+  pre_r = r;
+  pre_theta = theta;
+  pre_phi = phi;
+
+  double dr = CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dtheta = CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dphi = CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+
+  RCLCPP_INFO(this->get_logger(),
+              "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
+              a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
+
   joint_state->position = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset,
                            phi - phi_offset};
+  joint_state->velocity = {dtheta, vel_.z(), dr, dphi, dphi};
   joint_pub_->publish(std::move(joint_state));
 }
 
@@ -214,15 +243,25 @@ double WorldCoordManualController::CalcR(double l, double x, double y, double ps
 }
 
 double WorldCoordManualController::CalcPhi(double l, double x, double y, double psi) {
+  static double pre = 0.0;
   double out[2];
   model::ik_phi(l, psi, x, y, out);
-  return isnan(out[ik_index]) ? 0.0 : out[ik_index];
+  double ret = out[ik_index];
+  if (isnan(ret)) ret = 0.0;
+  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
+  pre = ret;
+  return ret;
 }
 
 double WorldCoordManualController::CalcTheta(double l, double x, double y, double psi) {
+  static double pre = 0.0;
   double out[2];
   model::ik_theta(l, psi, x, y, out);
-  return isnan(out[ik_index]) ? 0.0 : out[ik_index];
+  double ret = out[ik_index];
+  if (isnan(ret)) ret = 0.0;
+  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
+  pre = ret;
+  return ret;
 }
 
 double WorldCoordManualController::CalcX(double theta, double r, double phi, double l) {
@@ -235,4 +274,17 @@ double WorldCoordManualController::CalcY(double theta, double r, double phi, dou
 
 double WorldCoordManualController::CalcPsi(double theta, double phi) {
   return model::fk_psi(phi, theta);
+}
+
+double WorldCoordManualController::CalcRVel(
+    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
+  return model::dr(dpsi, dx, dy, l, phi, theta);
+}
+double WorldCoordManualController::CalcPhiVel(
+    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
+  return model::dphi(dpsi, dx, dy, l, phi, r, theta);
+}
+double WorldCoordManualController::CalcThetaVel(
+    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
+  return model::dtheta(dpsi, dx, dy, l, phi, r, theta);
 }

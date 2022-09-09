@@ -33,7 +33,10 @@ class WorldCoordManualController : public JoyController {
   const std::string input_topic_name_{"world_coord_pose"};
   std::function<void()> timer_callback_;
   Eigen::Vector3d pos_;
+  Eigen::Vector3d vel_;
   double psi_;
+  double dpsi_;
+  int loop_ms_{20};
   std::string current_bellows_frame_;
   int ik_index{1};
   VelocityRatio velocity_ratio;
@@ -61,6 +64,11 @@ class WorldCoordManualController : public JoyController {
   double CalcX(double theta, double r, double phi, double l);
   double CalcY(double theta, double r, double phi, double l);
   double CalcPsi(double theta, double phi);
+  double CalcRVel(double l, double dx, double dy, double dpsi, double r, double theta, double phi);
+  double CalcPhiVel(
+      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
+  double CalcThetaVel(
+      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
   void TimerCallback();
 };
 

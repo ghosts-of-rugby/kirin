@@ -47,7 +47,7 @@ class HandToolManager : public rclcpp::Node {
                          const std::chrono::milliseconds& timeout
                          = std::chrono::milliseconds(1000));
 
-  ddt::Uart arduino_uart_;
+  // ddt::Uart arduino_uart_;
   HandState hand_state_;
   std::unordered_map<HandState, std::string> resource_map_;
   std::unordered_map<HandState, std::array<BellowsPositionTuple, 3>> bellows_map_;

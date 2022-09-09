@@ -12,7 +12,7 @@ using namespace std::chrono_literals;  // NOLINT
 
 HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
     : Node("hand_tool_manager", options),
-      arduino_uart_("/dev/ttyACM0", ddt::Uart::BaudRate::B_115200),
+      // arduino_uart_("/dev/ttyACM0", ddt::Uart::BaudRate::B_115200),
       hand_state_(HandState::Shrink),
       marker_timer_callback_(std::bind(&HandToolManager::MarkerTimerCallback, this)),
       handle_set_hand_state_(std::bind(&HandToolManager::SetHandStateCallback,
@@ -206,31 +206,32 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
 bool HandToolManager::SendDataToArduino(uint8_t data, const std::chrono::milliseconds& timeout) {
   auto start = this->get_clock()->now();
 
-  while (true) {
-    auto now = this->get_clock()->now();
-    if (now - start > timeout) {
-      RCLCPP_WARN(this->get_logger(), "Sending data to arduino is failed");
-      return false;
-    }
+  // while (true) {
+  //   auto now = this->get_clock()->now();
+  //   if (now - start > timeout) {
+  //     RCLCPP_WARN(this->get_logger(), "Sending data to arduino is failed");
+  //     return false;
+  //   }
 
-    arduino_uart_.Send({data});
-    std::this_thread::sleep_for(500us);
-    auto rececive = arduino_uart_.Receive();
+  //   arduino_uart_.Send({data});
+  //   std::this_thread::sleep_for(500us);
+  //   auto rececive = arduino_uart_.Receive();
 
-    if (rececive.size() == 0) {
-      RCLCPP_WARN(this->get_logger(), "receive size is 0");
-      std::this_thread::sleep_for(100ms);
-      continue;
-    }
-    if (rececive.at(0) == data) {
-      // RCLCPP_INFO(this->get_logger(), "Successfully data returned");
-      return true;
-    } else {
-      RCLCPP_WARN(this->get_logger(), "Wrong data returned");
-      std::this_thread::sleep_for(100ms);
-      continue;
-    }
-  }
+  //   if (rececive.size() == 0) {
+  //     RCLCPP_WARN(this->get_logger(), "receive size is 0");
+  //     std::this_thread::sleep_for(100ms);
+  //     continue;
+  //   }
+  //   if (rececive.at(0) == data) {
+  //     // RCLCPP_INFO(this->get_logger(), "Successfully data returned");
+  //     return true;
+  //   } else {
+  //     RCLCPP_WARN(this->get_logger(), "Wrong data returned");
+  //     std::this_thread::sleep_for(100ms);
+  //     continue;
+  //   }
+  // }
+  return true;
 }
 
 void HandToolManager::UpdateBellowsTransformVector(HandState hand_state) {
