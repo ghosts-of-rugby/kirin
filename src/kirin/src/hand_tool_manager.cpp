@@ -11,6 +11,7 @@ using namespace std::chrono_literals;
 
 HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
     : Node("hand_tool_manager", options),
+      arduino_uart_("/dev/ttyACM0", ddt::Uart::BaudRate::B_115200),
       hand_state_(HandState::Shrink),
       marker_timer_callback_(std::bind(&HandToolManager::MarkerTimerCallback, this)),
       handle_set_hand_state_(std::bind(&HandToolManager::SetHandStateCallback, this,
@@ -125,16 +126,45 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
       {Bellows::ExRight, static_cast<Air>(request->air_state.ex_right)},
   };
 
-  bool release = std::all_of(next_state.begin(), next_state.end(), [](std::pair<Bellows, Air> pair){
-    return pair.second == Air::Off;
-  });
+  // bool release = std::all_of(next_state.begin(), next_state.end(), [](std::pair<Bellows, Air> pair){
+  //   return pair.second == Air::Off;
+  // });
+  bool release = request->air_state.release;
+  bool vacuum = !release;
+
+  static bool air__ = false;
+  air__ = !air__;
 
   /* Send Uart to Arduino */
-  if(release) {
-    /* release */
-  } else {
-    /* vacuum */
+  uint8_t data = 0x00;
+  data |= (static_cast<bool>(next_state.at(Bellows::ExLeft))  << 0);
+  data |= (static_cast<bool>(next_state.at(Bellows::Left))    << 1);
+  data |= (static_cast<bool>(next_state.at(Bellows::Top))     << 2);
+  data |= (static_cast<bool>(next_state.at(Bellows::Right))   << 3);
+  data |= (static_cast<bool>(next_state.at(Bellows::ExRight)) << 4);
+  data |= (static_cast<bool>(air__)                           << 5);
+  data |= (static_cast<bool>(release)                         << 6);
+
+  auto start = this->get_clock()->now();
+  bool finish = false;
+  while(!finish) {
+    arduino_uart_.Send({data});
+    std::this_thread::sleep_for(500us);
+    auto rececive = arduino_uart_.Receive();
+    if(rececive.size() == 0) {
+      RCLCPP_WARN(this->get_logger(), "receive size is 0");
+      std::this_thread::sleep_for(500ms);
+      continue;
+    }
+    if(rececive.at(0) == data) {
+      RCLCPP_INFO(this->get_logger(), "Successfully data returned");
+      break;
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Wrong data returned");
+      std::this_thread::sleep_for(500ms);
+    }
   }
+
 
   for(const auto& [key, next_value] : next_state) {
     if(air_map_.at(key) != next_value) {

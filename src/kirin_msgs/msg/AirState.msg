@@ -6,3 +6,4 @@ bool left
 bool right
 bool ex_left
 bool ex_right
+bool release

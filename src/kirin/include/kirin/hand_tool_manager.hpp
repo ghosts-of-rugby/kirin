@@ -15,6 +15,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 
 #include "kirin/common_types.hpp"
+#include "ddt-motor/uart.hpp"
 
 enum class HandState {
   Shrink = 0,
@@ -42,6 +43,7 @@ class HandToolManager : public rclcpp::Node {
                            const std::shared_ptr<SetAirState::Request>,
                            std::shared_ptr<SetAirState::Response>);
   void UpdateBellowsTransformVector(HandState hand_state);
+  ddt::Uart arduino_uart_;
   HandState hand_state_;
   std::unordered_map<HandState, std::string> resource_map_;
   std::unordered_map<HandState, std::array<BellowsPositionTuple, 3>> bellows_map_;
