@@ -35,4 +35,14 @@ enum class HandState {
   Extend = 1
 };
 
+enum class MoveMode {
+  Manual = 0,
+  Auto = 1,
+  Stop = 2
+};
+
+
+
+}  // namespace kirin_types
+
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_COMMON_TYPES */

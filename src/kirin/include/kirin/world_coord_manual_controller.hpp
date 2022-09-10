@@ -10,6 +10,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <kirin_msgs/msg/move_mode.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/joy_controller.hpp"
@@ -41,16 +42,21 @@ class WorldCoordManualController : public JoyController {
   std::string current_bellows_frame_;
   VelocityRatio velocity_ratio;
   bool is_air_on{false};
+
   kirin_types::HandState current_state_;
+  kirin_types::MoveMode move_mode_;
+
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_;
+  rclcpp::Publisher<kirin_msgs::msg::MoveMode>::SharedPtr move_mode_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
+
 
   inline geometry_msgs::msg::Pose GetManualInput();
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
@@ -62,6 +68,10 @@ class WorldCoordManualController : public JoyController {
   void TimerCallback();
   void ChangePumpStateClientRequest();
   void ChangeHandStateClientRequest();
+  void ModeChangeHandler();
+
+  void PublishBellowsMsg(const std::string& bellows);
+  void PublishModeMsg(const kirin_types::MoveMode& mode);
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */

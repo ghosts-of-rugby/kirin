@@ -18,6 +18,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       psi_(0.0),
       dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
+      move_mode_{kirin_types::MoveMode::Manual},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
   velocity_ratio.x   = declare_parameter("velocity_ratio.x", 0.0);
   velocity_ratio.y   = declare_parameter("velocity_ratio.y", 0.0);
@@ -40,17 +41,25 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(
       Button::X, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
+  this->RegisterButtonPressedCallback(
+      Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
+
   // this->RegisterButtonPressedCallback(
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   world_coord_pub_     = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
   joint_pub_           = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
-  current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame_", qos);
+  current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame", qos);
+  move_mode_pub_       = create_publisher<kirin_msgs::msg::MoveMode>("move_mode", qos);
   timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
   set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
+
+  /* publish initial message */
+  PublishBellowsMsg(current_bellows_frame_);
+  PublishModeMsg(move_mode_);
 }
 
 WorldCoordManualController::~WorldCoordManualController() {}
@@ -60,7 +69,7 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualInput() {
   vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
                          this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
                          this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
-  pos_ += vel_ * loop_ms_ * 0.001;  // 10ms loop
+  pos_ += vel_ * loop_ms_ * 0.001;
   pose.position = Eigen::toMsg(pos_);
 
   double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
@@ -114,10 +123,9 @@ void WorldCoordManualController::SetCurrentBellows(const std::string& bellows_fr
     RCLCPP_INFO(this->get_logger(), "pos: %3f, %3f, %3f", pos_.x(), pos_.y(), pos_.z());
   }
 
+  /* publish current bellows */
   current_bellows_frame_ = bellows_frame;
-  std_msgs::msg::String bellows_msg;
-  bellows_msg.data = "current bellows: " + current_bellows_frame_;
-  current_bellows_pub_->publish(std::move(bellows_msg));
+  PublishBellowsMsg(current_bellows_frame_);
 
   auto&& bellows_in_phi_link = GetPoseFromTf(frame::kPhiLink, current_bellows_frame_);
   double l, phi_offset;
@@ -234,4 +242,29 @@ void WorldCoordManualController::ChangePumpStateClientRequest() {
   };
 
   auto future_result = set_air_state_client_->async_send_request(request, response_callback);
+}
+
+void WorldCoordManualController::ModeChangeHandler() {
+  using Mode     = kirin_types::MoveMode;
+  auto next_mode = (move_mode_ == Mode::Auto) ? Mode::Manual : Mode::Auto;
+  RCLCPP_INFO(this->get_logger(), "MoveMode: '%s' -> '%s'",
+              magic_enum::enum_name(this->move_mode_).data(),
+              magic_enum::enum_name(next_mode).data());
+  move_mode_ = next_mode;
+
+  PublishModeMsg(move_mode_);
+}
+
+void WorldCoordManualController::PublishBellowsMsg(const std::string& bellows) {
+  std_msgs::msg::String bellows_msg;
+  bellows_msg.data = bellows;
+  current_bellows_pub_->publish(std::move(bellows_msg));
+}
+
+void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mode) {
+  kirin_msgs::msg::MoveMode msg;
+  if(mode == kirin_types::MoveMode::Auto) msg.mode = kirin_msgs::msg::MoveMode::AUTO;
+  else if(mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
+  else /* mode == kirin_types::MoveMode::Stop) */ msg.mode = kirin_msgs::msg::MoveMode::STOP;
+  move_mode_pub_->publish(std::move(msg));
 }
