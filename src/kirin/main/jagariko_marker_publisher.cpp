@@ -2,9 +2,13 @@
 #include <tuple>
 #include <chrono>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <rclcpp/rclcpp.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 #include "kirin/frame.hpp"
 
@@ -21,10 +25,11 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   explicit JagarikoMarkersPublisher(const std::string& topic_name,
                                     const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
       : Node("jagariko_marker_publisher", options) {
+    /* calculate jagariko position */
     // our jaga
-    float distance = 0.2;
-    float top_x    = -1.0 * 0.4;  // if red
-    float top_y    = distance * 2.5;
+    double distance = 0.2;
+    double top_x    = -1.0 * 0.4;  // if red
+    double top_y    = distance * 2.5;
     for (int l = 0; l < BLOCK_NUM; l++) {
       jaga_poses_.at(3 * l + 0) = {top_x, top_y - l * distance};
       jaga_poses_.at(3 * l + 1) = {top_x - distance / 2.0, top_y - (l + 0.5) * distance};
@@ -33,20 +38,69 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     jaga_poses_.at(OUR_JAGARIKO_NUM - 1) = {top_x, top_y - BLOCK_NUM * distance};
 
     // share jaga
-    float share_distance = 0.14;
-    float share_top_x    = 0.0;
-    float share_top_y    = float(SHARE_JAGARIKO_NUM - 1) / 2.0 * share_distance;
+    double share_distance = 0.14;
+    double share_top_x    = 0.0;
+    double share_top_y    = double(SHARE_JAGARIKO_NUM - 1) / 2.0 * share_distance;
     for (int l = 0; l < SHARE_JAGARIKO_NUM; l++) {
       share_jaga_poses_.at(l) = {share_top_x, share_top_y - l * share_distance};
     }
+
+    /* create pick target transform */
+    // out field pick target
+    std::vector<std::tuple<int, std::string>> target = {
+        {3,  "pick_our_1"},
+        {6,  "pick_our_2"},
+        {9,  "pick_our_3"},
+        {12, "pick_our_4"},
+        {15, "pick_out_5"}
+    };
+    for (const auto& [idx, frame] : target) {
+      auto [x, y] = jaga_poses_.at(idx);
+      double z    = 0.08;
+      double yaw  = -M_PI_2;  // parent_frame: field(base_link)
+      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, frame));
+    }
+    // share field target
+    {
+      auto [x, y]    = share_jaga_poses_.at(2);
+      double share_z = 0.035;
+      double z       = 0.08 + share_z;
+      double yaw     = 0.0;
+      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, "pick_share"));
+    }
+
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tf_broadcaster_->sendTransform(transform_vec_);
 
     using namespace std::chrono_literals;
     marker_pub_   = create_publisher<MarkerArray>(topic_name, rclcpp::SystemDefaultsQoS());
     marker_timer_ = create_wall_timer(
         50ms, std::bind(&JagarikoMarkersPublisher::PublishJagarikoMarker, this));
+    transform_timer_
+        = create_wall_timer(20ms, std::bind(&JagarikoMarkersPublisher::PublishTransform, this));
   }
 
  private:
+  geometry_msgs::msg::TransformStamped CreateJagarikoTransform(
+      double x, double y, double z, double yaw, const std::string& frame_name) {
+    geometry_msgs::msg::TransformStamped t;
+    t.header.stamp    = this->get_clock()->now();
+    t.header.frame_id = frame::kBaseLink;
+    t.child_frame_id  = frame_name;
+
+    t.transform.translation.x = x;
+    t.transform.translation.y = y;
+    t.transform.translation.z = z;
+    Eigen::Quaterniond quat(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
+    t.transform.rotation = Eigen::toMsg(quat);
+    return std::move(t);
+  }
+
+  void PublishTransform() {
+    for (auto& t : transform_vec_) t.header.stamp = this->get_clock()->now();
+    tf_broadcaster_->sendTransform(transform_vec_);
+  }
+
   void PublishJagarikoMarker() {
     auto markers_msg = std::make_unique<MarkerArray>();
 
@@ -56,15 +110,15 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     }
 
     for (int i = 0; i < SHARE_JAGARIKO_NUM; i++) {
-      auto [x, y]   = this->share_jaga_poses_.at(i);
-      float share_z = 0.035;
+      auto [x, y]    = this->share_jaga_poses_.at(i);
+      double share_z = 0.035;
       markers_msg->markers.push_back(this->CreateJagarikoMarker(100 + i, x, y, share_z));
     }
 
     this->marker_pub_->publish(std::move(markers_msg));
   }
 
-  Marker CreateJagarikoMarker(int id, float x, float y, float z) {
+  Marker CreateJagarikoMarker(int id, double x, double y, double z) {
     Marker marker;
     marker.header.frame_id = frame::kBaseLink;
     marker.header.stamp    = get_clock()->now();
@@ -95,11 +149,14 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     return marker;
   }
 
-  std::array<std::tuple<float, float>, OUR_JAGARIKO_NUM> jaga_poses_;
-  std::array<std::tuple<float, float>, SHARE_JAGARIKO_NUM> share_jaga_poses_;
+  std::array<std::tuple<double, double>, OUR_JAGARIKO_NUM> jaga_poses_;
+  std::array<std::tuple<double, double>, SHARE_JAGARIKO_NUM> share_jaga_poses_;
+  std::vector<geometry_msgs::msg::TransformStamped> transform_vec_;
 
   rclcpp::Publisher<MarkerArray>::SharedPtr marker_pub_;
   rclcpp::TimerBase::SharedPtr marker_timer_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  rclcpp::TimerBase::SharedPtr transform_timer_;
 };
 
 int main(int argc, char* argv[]) {
