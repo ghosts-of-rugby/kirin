@@ -64,7 +64,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
 WorldCoordManualController::~WorldCoordManualController() {}
 
-geometry_msgs::msg::Pose WorldCoordManualController::GetManualInput() {
+geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   geometry_msgs::msg::Pose pose;
   vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
                          this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
@@ -202,7 +202,7 @@ void WorldCoordManualController::TimerCallback() {
 
   input_pose->header.frame_id = frame::kFixBase;
   input_pose->header.stamp    = get_clock()->now();
-  input_pose->pose            = GetManualInput();
+  input_pose->pose            = GetManualPose();
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
@@ -263,8 +263,8 @@ void WorldCoordManualController::PublishBellowsMsg(const std::string& bellows) {
 
 void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mode) {
   kirin_msgs::msg::MoveMode msg;
-  if(mode == kirin_types::MoveMode::Auto) msg.mode = kirin_msgs::msg::MoveMode::AUTO;
-  else if(mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
+  if (mode == kirin_types::MoveMode::Auto) msg.mode = kirin_msgs::msg::MoveMode::AUTO;
+  else if (mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
   else /* mode == kirin_types::MoveMode::Stop) */ msg.mode = kirin_msgs::msg::MoveMode::STOP;
   move_mode_pub_->publish(std::move(msg));
 }

@@ -4,6 +4,7 @@
 #include <string>
 
 namespace frame {
+const std::string kBaseLink{"base_link"};
 const std::string kFixBase{"fix_base"};
 const std::string kThetaLink{"theta_link"};
 const std::string kZLink{"z_link"};

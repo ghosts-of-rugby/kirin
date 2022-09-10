@@ -57,8 +57,7 @@ class WorldCoordManualController : public JoyController {
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-
-  inline geometry_msgs::msg::Pose GetManualInput();
+  inline geometry_msgs::msg::Pose GetManualPose();
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                                const std::string& child_frame);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
