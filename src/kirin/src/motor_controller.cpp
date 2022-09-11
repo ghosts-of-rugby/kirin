@@ -125,12 +125,15 @@ void MotorController::MotorStateVectorReceiveCallback(
     auto state_left = motor_left->ReceiveSpinMotorFeedback();
     controller_left->Update(state_left);
 
-    current_motor->angle.right = controller_right->angle;
-    current_motor->velocity.right = controller_right->velocity;
-    current_motor->angle.left = controller_left->angle;
-    current_motor->velocity.left = controller_left->velocity;
-    current_motor->angle.z = controller_z->angle;
-    current_motor->velocity.z = controller_z->velocity;
+    current_motor->angle.right =
+        controller_right->angle * controller_right->dir;
+    current_motor->velocity.right =
+        controller_right->velocity * controller_right->dir;
+    current_motor->angle.left = controller_left->angle * controller_left->dir;
+    current_motor->velocity.left =
+        controller_left->velocity * controller_left->dir;
+    current_motor->angle.z = controller_z->angle * controller_z->dir;
+    current_motor->velocity.z = controller_z->velocity * controller_z->dir;
   }
 
   /* 受け取ったデータをpublish */
