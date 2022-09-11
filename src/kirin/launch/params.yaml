@@ -9,17 +9,35 @@ world_coord_controller:
 joint_state_publisher:
   ros__parameters:
     rate: 50
-    source_list: ['manual_joint']
+    source_list: ["manual_joint"]
 
 joy_node:
   ros__parameters:
-    autorepeat_rate: 50.0  # [Hz]
+    autorepeat_rate: 50.0 # [Hz]
     # coalesce_interval_ms: 20  # [ms]
 
 hand_tool_manager:
   ros__parameters:
-    max_speed: 5.0
-    pid:
+    is_simulation: true
+    sleep_time: 5
+    usb_device:
+      left_right: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
+      theta_z: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
+    right:
+      id: 0x06
+      dir: -1
       Kp: 5.0
-      Ki: 0.0
-      Kd: 0.0
+      max_speed: 10.0
+    left:
+      id: 0x09
+      dir: 1
+      Kp: 5.0
+      max_speed: 10.0
+    theta:
+      id: 0x03
+      Kp_position: 5.0
+      Kp_velocity: 5.0
+    z:
+      id: 0x06
+      Kp: 5.0
+      max_speed: 1.0
