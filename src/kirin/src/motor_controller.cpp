@@ -25,6 +25,12 @@ double ControllerVelocityInput::GetInput(double ref_velocity,
   return input;
 }
 
+ControllerVelocityInput::ControllerVelocityInput(int dir, double Kp, double max_speed) {
+  this->dir = dir;
+  this->Kp = Kp;
+  this->max_speed = max_speed;
+}
+
 MotorController::MotorController(const rclcpp::NodeOptions& options)
     : Node("motor_controller", options),
       motor_callback_(
@@ -139,6 +145,8 @@ void MotorController::MotorStateVectorReceiveCallback(
   /* end */
   auto run_time = this->get_clock()->now() - start;
   auto run_us = run_time.to_chrono<std::chrono::microseconds>();
-  RCLCPP_INFO(this->get_logger(), "motor communication run time: %4d [us]",
-              run_us.count());
+  if (run_us > 11000us) {
+    RCLCPP_WARN(this->get_logger(), "motor communication run time: %4d [us]",
+                run_us.count());
+  }
 }

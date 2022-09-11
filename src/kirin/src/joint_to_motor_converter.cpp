@@ -11,7 +11,7 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
 
   // clang-format off
   mat_motor_to_joint_ << 1./2.*R_m,  1./2.*R_m,
-                         -R_m/R_phi, R_m/R_phi;
+                         R_m/R_phi, -R_m/R_phi;
   // clang-format on
 
   /* initial joint value when setting */
@@ -23,21 +23,35 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
 }
 
 void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) {
+  if(msg->velocity.size() < 3) return;
   // joint_state = {theta, z, r, phi, phi}
   Joint joint{.theta = msg->position.at(0),
               .z     = msg->position.at(1),
               .r     = msg->position.at(2),
               .phi   = msg->position.at(3)};
+  Joint joint_vel{
+    .theta = msg->velocity.at(0),
+    .z = msg->velocity.at(1),
+    .r = msg->velocity.at(2),
+    .phi = msg->velocity.at(3)
+  };
 
-  Eigen::Vector2d r_phi_vec{joint.r - initial_joint_.r, joint.phi - initial_joint_.phi};
+  Eigen::Vector2d r_phi_pos{joint.r - initial_joint_.r, joint.phi - initial_joint_.phi};
+  Eigen::Vector2d r_phi_vel{joint_vel.r, joint_vel.phi};
 
-  Eigen::Vector2d motor_vec = mat_motor_to_joint_.inverse() * r_phi_vec;
+  Eigen::Vector2d motor_pos = mat_motor_to_joint_.inverse() * r_phi_pos;
+  Eigen::Vector2d motor_vel = mat_motor_to_joint_.inverse() * r_phi_vel;
   MotorAngle motor_angle{.theta = joint.theta / machine::kThetaGearRatio,
-                         .left  = motor_vec.x(),
-                         .right = motor_vec.y(),
+                         .left  = motor_pos.x(),
+                         .right = motor_pos.y(),
                          // .z = joint.z / machine::kZGearRatio * machine::kZGearRadius
                          .z     = joint.z / machine::kZRatio};
-
+  MotorAngle motor_velocity{
+    .theta = joint_vel.theta / machine::kThetaGearRatio,
+    .left = motor_vel.x(),
+    .right = motor_vel.y(),
+    .z = joint_vel.z / machine::kZRatio
+  };
   // velocity convert
   // MotorAngle velocity;
 
@@ -46,5 +60,9 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
   motor_msg->angle.left  = motor_angle.left;
   motor_msg->angle.right = motor_angle.right;
   motor_msg->angle.z     = motor_angle.z;
+  motor_msg->velocity.theta = motor_velocity.theta;
+  motor_msg->velocity.left = motor_velocity.left;
+  motor_msg->velocity.right = motor_velocity.right;
+  motor_msg->velocity.z = motor_velocity.z;
   motor_pub_->publish(std::move(motor_msg));
 }

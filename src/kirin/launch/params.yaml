@@ -1,10 +1,10 @@
 world_coord_controller:
   ros__parameters:
     velocity_ratio:
-      x: 0.3
-      y: 0.3
-      z: 0.2
-      psi: 0.3
+      x: 0.1
+      y: 0.1
+      z: 0.1
+      psi: 0.1
 
 joint_state_publisher:
   ros__parameters:
@@ -16,21 +16,21 @@ joy_node:
     autorepeat_rate: 50.0 # [Hz]
     # coalesce_interval_ms: 20  # [ms]
 
-hand_tool_manager:
+motor_controller:
   ros__parameters:
-    is_simulation: true
+    is_simulation: false
     sleep_time: 5
     usb_device:
       left_right: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
       theta_z: usb-FTDI_FT232R_USB_UART_AQ027PCT-if00-port0
     right:
       id: 0x06
-      dir: -1
+      dir: 1
       Kp: 5.0
       max_speed: 5.0
     left:
       id: 0x09
-      dir: 1
+      dir: -1
       Kp: 5.0
       max_speed: 5.0
     theta:
@@ -39,5 +39,6 @@ hand_tool_manager:
       Kp_velocity: 5.0
     z:
       id: 0x03
+      dir: -1
       Kp: 5.0
       max_speed: 10.0

@@ -14,7 +14,7 @@ struct ControllerBase {
   std::optional<ddt::Motor::State> state = std::nullopt;
   double angle = 0;
   double velocity = 0;
-  virtual double GetInput(double ref_velocity, double ref_angle);
+  virtual double GetInput(double ref_velocity, double ref_angle) = 0;
   void Update(std::optional<ddt::Motor::State> state);
 };
 
@@ -23,7 +23,7 @@ struct ControllerVelocityInput : public ControllerBase {
   double Kp;
   double max_speed;
   ControllerVelocityInput(int dir, double Kp, double max_speed);
-  double GetInput(double ref_velocity, double ref_angle);
+  double GetInput(double ref_velocity, double ref_angle) override;
 };
 
 struct ControllerCurrentInput {};
