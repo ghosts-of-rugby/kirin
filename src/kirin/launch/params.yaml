@@ -22,22 +22,22 @@ hand_tool_manager:
     sleep_time: 5
     usb_device:
       left_right: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
-      theta_z: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
+      theta_z: usb-FTDI_FT232R_USB_UART_AQ027PCT-if00-port0
     right:
       id: 0x06
       dir: -1
       Kp: 5.0
-      max_speed: 10.0
+      max_speed: 5.0
     left:
       id: 0x09
       dir: 1
       Kp: 5.0
-      max_speed: 10.0
+      max_speed: 5.0
     theta:
-      id: 0x03
+      id: 0x06
       Kp_position: 5.0
       Kp_velocity: 5.0
     z:
-      id: 0x06
+      id: 0x03
       Kp: 5.0
-      max_speed: 1.0
+      max_speed: 10.0
