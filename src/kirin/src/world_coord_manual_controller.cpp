@@ -3,17 +3,10 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
-#include "kirin/frame.hpp"
 #include "kirin/world_coord_manual_controller.hpp"
-#include "ik_r.h"
-#include "ik_phi.h"
-#include "ik_theta.h"
-#include "fk_x.h"
-#include "fk_y.h"
-#include "fk_psi.h"
-#include "dr.h"
-#include "dtheta.h"
-#include "dphi.h"
+#include "kirin/frame.hpp"
+#include "kirin/machine.hpp"
+#include <iostream>
 
 using namespace std::chrono_literals;
 
@@ -25,14 +18,15 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       psi_(0.0),
       dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
+      move_mode_{kirin_types::MoveMode::Manual},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
-  velocity_ratio.x = declare_parameter("velocity_ratio.x", 0.0);
-  velocity_ratio.y = declare_parameter("velocity_ratio.y", 0.0);
-  velocity_ratio.z = declare_parameter("velocity_ratio.z", 0.0);
+  velocity_ratio.x   = declare_parameter("velocity_ratio.x", 0.0);
+  velocity_ratio.y   = declare_parameter("velocity_ratio.y", 0.0);
+  velocity_ratio.z   = declare_parameter("velocity_ratio.z", 0.0);
   velocity_ratio.psi = declare_parameter("velocity_ratio.psi", 0.0);
 
   // transform listener
-  tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  tf_buffer_          = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   {
@@ -41,64 +35,47 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     std::this_thread::sleep_for(300ms);
   }
 
-  this->RegisterButtonPressedCallback(Button::A, [this]() -> void {
-    auto request = std::make_shared<kirin_msgs::srv::ToggleHandState::Request>();
-    request->toggle = true;
+  this->RegisterButtonPressedCallback(
+      Button::A, std::bind(&WorldCoordManualController::ChangeHandStateClientRequest, this));
 
-    using ResponseFuture = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
-    auto response_callback = [this](ResponseFuture future) {
-      auto response = future.get();
-      // if(response->result) RCLCPP_INFO(this->get_logger(), "Successfully Hand State Changed");
-    };
+  this->RegisterButtonPressedCallback(
+      Button::X, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
-    auto future_result = toggle_hand_state_client_->async_send_request(request, response_callback);
-  });
-
-  this->RegisterButtonPressedCallback(Button::X, [this]() -> void {
-    auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
-    request->air_state.left = !is_air_on;
-    request->air_state.right = !is_air_on;
-    request->air_state.top = !is_air_on;
-    request->air_state.ex_left = false;
-    request->air_state.ex_right = false;
-    request->air_state.ex_right = !is_air_on;
-
-    is_air_on = !is_air_on;
-    using ResponseFuture = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
-    auto response_callback = [this](ResponseFuture future) {
-      auto response = future.get();
-      // if(response->result) RCLCPP_INFO(this->get_logger(), "Successfully Hand State Changed");
-    };
-
-    auto future_result = set_air_state_client_->async_send_request(request, response_callback);
-  });
+  this->RegisterButtonPressedCallback(
+      Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
 
   // this->RegisterButtonPressedCallback(
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
-  world_coord_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
-  joint_pub_ = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
-  current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame_", qos);
-  timer_ = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
-  toggle_hand_state_client_ =
-      create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
+  world_coord_pub_     = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
+  joint_pub_           = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
+  current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame", qos);
+  move_mode_pub_       = create_publisher<kirin_msgs::msg::MoveMode>("move_mode", qos);
+  timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
+  toggle_hand_state_client_
+      = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
+  set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
+
+  /* publish initial message */
+  PublishBellowsMsg(current_bellows_frame_);
+  PublishModeMsg(move_mode_);
 }
 
 WorldCoordManualController::~WorldCoordManualController() {}
 
-geometry_msgs::msg::Pose WorldCoordManualController::GetManualInput() {
+geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   geometry_msgs::msg::Pose pose;
   vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
-                      this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
-                      this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
-  pos_ += vel_ * loop_ms_*0.001;  // 10ms loop
+                         this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
+                         this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
+  pos_ += vel_ * loop_ms_ * 0.001;
   pose.position = Eigen::toMsg(pos_);
 
-  double left_trig = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
+  double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
   double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  dpsi_ = (left_trig - right_trig) * velocity_ratio.psi;
-  psi_ += dpsi_ * loop_ms_*0.001;
+  dpsi_             = (left_trig - right_trig) * velocity_ratio.psi;
+  psi_ += dpsi_ * loop_ms_ * 0.001;
   Eigen::Quaterniond quat(Eigen::AngleAxisd(psi_, Eigen::Vector3d::UnitZ()));
   pose.orientation = Eigen::toMsg(quat);
 
@@ -117,9 +94,9 @@ std::optional<geometry_msgs::msg::Pose> WorldCoordManualController::GetPoseFromT
   }
 
   geometry_msgs::msg::Pose pose;
-  pose.position.x = transform_stamped.transform.translation.x;
-  pose.position.y = transform_stamped.transform.translation.y;
-  pose.position.z = transform_stamped.transform.translation.z;
+  pose.position.x  = transform_stamped.transform.translation.x;
+  pose.position.y  = transform_stamped.transform.translation.y;
+  pose.position.z  = transform_stamped.transform.translation.z;
   pose.orientation = transform_stamped.transform.rotation;
   return pose;
 }
@@ -146,17 +123,16 @@ void WorldCoordManualController::SetCurrentBellows(const std::string& bellows_fr
     RCLCPP_INFO(this->get_logger(), "pos: %3f, %3f, %3f", pos_.x(), pos_.y(), pos_.z());
   }
 
+  /* publish current bellows */
   current_bellows_frame_ = bellows_frame;
-  std_msgs::msg::String bellows_msg;
-  bellows_msg.data = "current bellows: " + current_bellows_frame_;
-  current_bellows_pub_->publish(std::move(bellows_msg));
+  PublishBellowsMsg(current_bellows_frame_);
 
   auto&& bellows_in_phi_link = GetPoseFromTf(frame::kPhiLink, current_bellows_frame_);
   double l, phi_offset;
   if (bellows_in_phi_link) {
-    double x = bellows_in_phi_link.value().position.x;
-    double y = bellows_in_phi_link.value().position.y;
-    l = sqrt(x * x + y * y);
+    double x   = bellows_in_phi_link.value().position.x;
+    double y   = bellows_in_phi_link.value().position.y;
+    l          = sqrt(x * x + y * y);
     phi_offset = atan2(y, x);
     PublishJointState(l, phi_offset);
   } else {
@@ -165,48 +141,44 @@ void WorldCoordManualController::SetCurrentBellows(const std::string& bellows_fr
 }
 
 void WorldCoordManualController::ChangeBellows() {
-  if (current_bellows_frame_ == frame::kBellowsTop)
-    SetCurrentBellows(frame::kBellowsLeft);
-  else if (current_bellows_frame_ == frame::kBellowsLeft)
-    SetCurrentBellows(frame::kBellowsRight);
-  else  // current_bellows_frame == frame::kBellowsRight
-    SetCurrentBellows(frame::kBellowsTop);
+  if (current_bellows_frame_ == frame::kBellowsTop) SetCurrentBellows(frame::kBellowsLeft);
+  else if (current_bellows_frame_ == frame::kBellowsLeft) SetCurrentBellows(frame::kBellowsRight);
+  else /* current_bellows_frame == frame::kBellowsRight */ SetCurrentBellows(frame::kBellowsTop);
 }
 
 void WorldCoordManualController::PublishJointState(double l, double phi_offset) {
-  auto joint_state = std::make_unique<sensor_msgs::msg::JointState>();
+  auto joint_state  = std::make_unique<sensor_msgs::msg::JointState>();
   joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
 
   double r_offset = 0.345 + 0.201;
   double z_offset = 0.1;
 
-  static double pre_r = 0.0;
+  static double pre_r     = 0.0;
   static double pre_theta = 0.0;
-  static double pre_phi = 0.0;
+  static double pre_phi   = 0.0;
 
-
-  double r = CalcR(l, pos_.x(), pos_.y(), psi_);
-  double theta = CalcTheta(l, pos_.x(), pos_.y(), psi_);
-  double phi = CalcPhi(l, pos_.x(), pos_.y(), psi_);
+  double r     = model::CalcR(l, pos_.x(), pos_.y(), psi_);
+  double theta = model::CalcTheta(l, pos_.x(), pos_.y(), psi_);
+  double phi   = model::CalcPhi(l, pos_.x(), pos_.y(), psi_);
 
   /* check */
-  double a_dr = (r - pre_r)/0.02;
-  double a_dtheta = (theta - pre_theta)/0.02;
-  double a_dphi = (phi - pre_phi)/0.02;
-  pre_r = r;
-  pre_theta = theta;
-  pre_phi = phi;
+  double a_dr     = (r - pre_r) / 0.02;
+  double a_dtheta = (theta - pre_theta) / 0.02;
+  double a_dphi   = (phi - pre_phi) / 0.02;
+  pre_r           = r;
+  pre_theta       = theta;
+  pre_phi         = phi;
 
-  double dr = CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dtheta = CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dphi = CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dr     = model::CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
+  double dphi   = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
 
-  RCLCPP_INFO(this->get_logger(),
-              "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
-              a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
+  // RCLCPP_INFO(this->get_logger(),
+  //             "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
+  //             a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
 
-  joint_state->position = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset,
-                           phi - phi_offset};
+  joint_state->position
+      = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset, phi - phi_offset};
   joint_state->velocity = {dtheta, vel_.z(), dr, dphi, dphi};
   joint_pub_->publish(std::move(joint_state));
 }
@@ -216,9 +188,9 @@ void WorldCoordManualController::TimerCallback() {
   auto&& bellows_in_phi_link = GetPoseFromTf(frame::kPhiLink, current_bellows_frame_);
   double l, phi_offset;
   if (bellows_in_phi_link) {
-    double x = bellows_in_phi_link.value().position.x;
-    double y = bellows_in_phi_link.value().position.y;
-    l = sqrt(x * x + y * y);
+    double x   = bellows_in_phi_link.value().position.x;
+    double y   = bellows_in_phi_link.value().position.y;
+    l          = sqrt(x * x + y * y);
     phi_offset = atan2(y, x);
     // RCLCPP_INFO(this->get_logger(), "x: %f, y: %f", x, y);
     // RCLCPP_INFO(this->get_logger(), "l: %f, phi offset: %f", l, phi_offset);
@@ -229,62 +201,70 @@ void WorldCoordManualController::TimerCallback() {
   auto input_pose = std::make_unique<geometry_msgs::msg::PoseStamped>();
 
   input_pose->header.frame_id = frame::kFixBase;
-  input_pose->header.stamp = get_clock()->now();
-  input_pose->pose = GetManualInput();
+  input_pose->header.stamp    = get_clock()->now();
+  input_pose->pose            = GetManualPose();
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
 }
 
-double WorldCoordManualController::CalcR(double l, double x, double y, double psi) {
-  double out[2];
-  model::ik_r(l, psi, x, y, out);
-  return out[ik_index];
+void WorldCoordManualController::ChangeHandStateClientRequest() {
+  auto request    = std::make_shared<kirin_msgs::srv::ToggleHandState::Request>();
+  request->toggle = true;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response        = future.get();
+    this->current_state_ = (response->current_state.value == kirin_msgs::msg::HandState::EXTEND)
+                               ? kirin_types::HandState::Extend
+                               : kirin_types::HandState::Shrink;
+    // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
+  };
+
+  auto future_result = toggle_hand_state_client_->async_send_request(request, response_callback);
 }
 
-double WorldCoordManualController::CalcPhi(double l, double x, double y, double psi) {
-  static double pre = 0.0;
-  double out[2];
-  model::ik_phi(l, psi, x, y, out);
-  double ret = out[ik_index];
-  if (isnan(ret)) ret = 0.0;
-  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
-  pre = ret;
-  return ret;
+void WorldCoordManualController::ChangePumpStateClientRequest() {
+  auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
+
+  auto next_state             = !is_air_on;
+  request->air_state.left     = next_state;
+  request->air_state.right    = next_state;
+  request->air_state.top      = next_state;
+  request->air_state.ex_left  = (current_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.ex_right = (current_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.release  = !next_state;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
+  auto response_callback = [this, next_state](ResponseFuture future) {
+    auto response = future.get();
+    if (response->result) this->is_air_on = next_state;
+  };
+
+  auto future_result = set_air_state_client_->async_send_request(request, response_callback);
 }
 
-double WorldCoordManualController::CalcTheta(double l, double x, double y, double psi) {
-  static double pre = 0.0;
-  double out[2];
-  model::ik_theta(l, psi, x, y, out);
-  double ret = out[ik_index];
-  if (isnan(ret)) ret = 0.0;
-  if (std::abs(ret - pre) > M_PI_2) ret = pre;  // when value jumped
-  pre = ret;
-  return ret;
+void WorldCoordManualController::ModeChangeHandler() {
+  using Mode     = kirin_types::MoveMode;
+  auto next_mode = (move_mode_ == Mode::Auto) ? Mode::Manual : Mode::Auto;
+  RCLCPP_INFO(this->get_logger(), "MoveMode: '%s' -> '%s'",
+              magic_enum::enum_name(this->move_mode_).data(),
+              magic_enum::enum_name(next_mode).data());
+  move_mode_ = next_mode;
+
+  PublishModeMsg(move_mode_);
 }
 
-double WorldCoordManualController::CalcX(double theta, double r, double phi, double l) {
-  return model::fk_x(l, phi, r, theta);
+void WorldCoordManualController::PublishBellowsMsg(const std::string& bellows) {
+  std_msgs::msg::String bellows_msg;
+  bellows_msg.data = bellows;
+  current_bellows_pub_->publish(std::move(bellows_msg));
 }
 
-double WorldCoordManualController::CalcY(double theta, double r, double phi, double l) {
-  return model::fk_y(l, phi, r, theta);
-}
-
-double WorldCoordManualController::CalcPsi(double theta, double phi) {
-  return model::fk_psi(phi, theta);
-}
-
-double WorldCoordManualController::CalcRVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dr(dpsi, dx, dy, l, phi, theta);
-}
-double WorldCoordManualController::CalcPhiVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dphi(dpsi, dx, dy, l, phi, r, theta);
-}
-double WorldCoordManualController::CalcThetaVel(
-    double l, double dx, double dy, double dpsi, double r, double theta, double phi) {
-  return model::dtheta(dpsi, dx, dy, l, phi, r, theta);
+void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mode) {
+  kirin_msgs::msg::MoveMode msg;
+  if (mode == kirin_types::MoveMode::Auto) msg.mode = kirin_msgs::msg::MoveMode::AUTO;
+  else if (mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
+  else /* mode == kirin_types::MoveMode::Stop) */ msg.mode = kirin_msgs::msg::MoveMode::STOP;
+  move_mode_pub_->publish(std::move(msg));
 }

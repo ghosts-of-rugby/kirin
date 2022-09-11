@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HandState.msg"
   "msg/Motor.msg"
   "msg/MotorStateVector.msg"
+  "msg/MoveMode.msg"
   "srv/SetAirState.srv"
   "srv/SetHandState.srv"
   "srv/ToggleHandState.srv"

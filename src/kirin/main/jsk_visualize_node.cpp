@@ -15,37 +15,48 @@ class JskVisualizeNode : public rclcpp::Node {
         joint_callback_(std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1)),
         motor_callback_(std::bind(&JskVisualizeNode::MotorCallback, this, std::placeholders::_1)),
         timer_callback_(std::bind(&JskVisualizeNode::TimerCallback, this)) {
-    using namespace std::chrono_literals;
+    using namespace std::chrono_literals;  // NOLINT
     rclcpp::QoS qos(rclcpp::KeepLast(10));
-    joint_sub_ =
-        create_subscription<sensor_msgs::msg::JointState>("joint_states", qos, joint_callback_);
+
+    /* define subscription */
+    joint_sub_
+        = create_subscription<sensor_msgs::msg::JointState>("joint_states", qos, joint_callback_);
     motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/reference", qos,
                                                                         motor_callback_);
+
+    /* show joint state */
     theta_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/theta", qos);
-    phi_pie_chart_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/phi", qos);
-    z_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/z", qos);
-    r_gauge_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/r", qos);
+    phi_pie_chart_pub_   = create_publisher<std_msgs::msg::Float32>("rviz/phi", qos);
+    z_gauge_pub_         = create_publisher<std_msgs::msg::Float32>("rviz/z", qos);
+    r_gauge_pub_         = create_publisher<std_msgs::msg::Float32>("rviz/r", qos);
+
+    /* show motor angle */
     motor_theta_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/theta", qos);
-    motor_left_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/left", qos);
+    motor_left_pub_  = create_publisher<std_msgs::msg::Float32>("rviz/motor/left", qos);
     motor_right_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/right", qos);
-    motor_z_pub_ = create_publisher<std_msgs::msg::Float32>("rviz/motor/z", qos);
+    motor_z_pub_     = create_publisher<std_msgs::msg::Float32>("rviz/motor/z", qos);
+
+    /* show date */
     date_string_pub_ = create_publisher<std_msgs::msg::String>("rviz/date", qos);
-    timer_ = create_wall_timer(10ms, timer_callback_);
+
+    /* regularly update */
+    timer_ = create_wall_timer(100ms, timer_callback_);
   }
 
  private:
   float Rad2Deg(float rad) { return rad * 180.0 / M_PI; }
+
   std::string GetNowDateString() {
     auto now = get_clock()->now();
     time_t t = now.seconds();
-    tm* ptm = localtime(&t);
+    tm* ptm  = localtime(&t);
     char buf[128];
     strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S", ptm);
     return std::string(buf);
   }
 
   void TimerCallback() {
-    auto date_msg = std::make_unique<std_msgs::msg::String>();
+    auto date_msg  = std::make_unique<std_msgs::msg::String>();
     date_msg->data = GetNowDateString();
     date_string_pub_->publish(std::move(date_msg));
   }
@@ -53,42 +64,42 @@ class JskVisualizeNode : public rclcpp::Node {
   void JointCallback(const sensor_msgs::msg::JointState::UniquePtr msg) {
     // joint = {theta, z, r, phi, phi}
     float theta = msg->position.at(0);
-    float z = msg->position.at(1);
-    float r = msg->position.at(2);
-    float phi = msg->position.at(3);
+    float z     = msg->position.at(1);
+    float r     = msg->position.at(2);
+    float phi   = msg->position.at(3);
 
-    auto theta_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto theta_msg  = std::make_unique<std_msgs::msg::Float32>();
     theta_msg->data = Rad2Deg(theta);
     theta_pie_chart_pub_->publish(std::move(theta_msg));
 
-    auto z_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto z_msg  = std::make_unique<std_msgs::msg::Float32>();
     z_msg->data = z;
     z_gauge_pub_->publish(std::move(z_msg));
 
-    auto r_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto r_msg     = std::make_unique<std_msgs::msg::Float32>();
     float r_offset = 0.345 + 0.201;
-    r_msg->data = r + r_offset;
+    r_msg->data    = r + r_offset;
     r_gauge_pub_->publish(std::move(r_msg));
 
-    auto phi_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto phi_msg  = std::make_unique<std_msgs::msg::Float32>();
     phi_msg->data = Rad2Deg(phi);
     phi_pie_chart_pub_->publish(std::move(phi_msg));
   }
 
   void MotorCallback(const kirin_msgs::msg::MotorStateVector::UniquePtr msg) {
-    auto theta_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto theta_msg  = std::make_unique<std_msgs::msg::Float32>();
     theta_msg->data = Rad2Deg(msg->angle.theta);
     motor_theta_pub_->publish(std::move(theta_msg));
 
-    auto left_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto left_msg  = std::make_unique<std_msgs::msg::Float32>();
     left_msg->data = Rad2Deg(msg->angle.left);
     motor_left_pub_->publish(std::move(left_msg));
 
-    auto right_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto right_msg  = std::make_unique<std_msgs::msg::Float32>();
     right_msg->data = Rad2Deg(msg->angle.right);
     motor_right_pub_->publish(std::move(right_msg));
 
-    auto z_msg = std::make_unique<std_msgs::msg::Float32>();
+    auto z_msg  = std::make_unique<std_msgs::msg::Float32>();
     z_msg->data = Rad2Deg(msg->angle.z);
     motor_z_pub_->publish(std::move(z_msg));
   }

@@ -17,10 +17,7 @@
 #include "kirin/common_types.hpp"
 #include "ddt-motor/uart.hpp"
 
-enum class HandState {
-  Shrink = 0,
-  Extend = 1
-};
+using HandState = kirin_types::HandState;
 
 class HandToolManager : public rclcpp::Node {
  public:
@@ -51,7 +48,7 @@ class HandToolManager : public rclcpp::Node {
   HandState hand_state_;
   std::unordered_map<HandState, std::string> resource_map_;
   std::unordered_map<HandState, std::array<BellowsPositionTuple, 3>> bellows_map_;
-  std::unordered_map<kirin_type::BellowsName, kirin_type::AirState> air_map_;
+  std::unordered_map<kirin_types::BellowsName, kirin_types::AirState> air_map_;
   std::vector<geometry_msgs::msg::TransformStamped> transform_vec_;
 
   std::function<void()> marker_timer_callback_;

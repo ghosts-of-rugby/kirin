@@ -15,7 +15,7 @@ struct MotorAngle {  // [rad]
   double z;
 };
 
-namespace kirin_type {
+namespace kirin_types {
 
 enum class BellowsName {
   Top,
@@ -30,6 +30,19 @@ enum class AirState {
   Off = 0
 };
 
-}  // namespace kirin_type
+enum class HandState {
+  Shrink = 0,
+  Extend = 1
+};
+
+enum class MoveMode {
+  Manual = 0,
+  Auto = 1,
+  Stop = 2
+};
+
+
+
+}  // namespace kirin_types
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_COMMON_TYPES */

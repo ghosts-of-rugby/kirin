@@ -10,9 +10,11 @@
 #include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <kirin_msgs/msg/move_mode.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/joy_controller.hpp"
+#include "kirin/common_types.hpp"
 
 using RPYTuple = std::tuple<double, double, double>;
 
@@ -38,38 +40,37 @@ class WorldCoordManualController : public JoyController {
   double dpsi_;
   int loop_ms_{20};
   std::string current_bellows_frame_;
-  int ik_index{1};
   VelocityRatio velocity_ratio;
   bool is_air_on{false};
+
+  kirin_types::HandState current_state_;
+  kirin_types::MoveMode move_mode_;
+
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_;
+  rclcpp::Publisher<kirin_msgs::msg::MoveMode>::SharedPtr move_mode_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  inline geometry_msgs::msg::Pose GetManualInput();
+  inline geometry_msgs::msg::Pose GetManualPose();
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                                const std::string& child_frame);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
   void SetCurrentBellows(const std::string& bellows_frame);
   void ChangeBellows();
   void PublishJointState(double l, double phi_offset);
-  double CalcR(double l, double x, double y, double psi);
-  double CalcPhi(double l, double x, double y, double psi);
-  double CalcTheta(double l, double x, double y, double psi);
-  double CalcX(double theta, double r, double phi, double l);
-  double CalcY(double theta, double r, double phi, double l);
-  double CalcPsi(double theta, double phi);
-  double CalcRVel(double l, double dx, double dy, double dpsi, double r, double theta, double phi);
-  double CalcPhiVel(
-      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
-  double CalcThetaVel(
-      double l, double dx, double dy, double dpsi, double r, double theta, double phi);
   void TimerCallback();
+  void ChangePumpStateClientRequest();
+  void ChangeHandStateClientRequest();
+  void ModeChangeHandler();
+
+  void PublishBellowsMsg(const std::string& bellows);
+  void PublishModeMsg(const kirin_types::MoveMode& mode);
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */
