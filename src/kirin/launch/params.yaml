@@ -14,7 +14,7 @@ world_coord_controller:
     z_auto:
       ratio: 2.0
       max_speed: 0.3
-      approach_offset: 0.05
+      approach_offset: 0.017
 
 joint_state_publisher:
   ros__parameters:
@@ -28,11 +28,13 @@ joy_node:
 
 hand_tool_manager:
   ros__parameters:
+    use_hardware: false
     usb_device:
       pump_arduino: "ttyACM0"
 
 motor_controller:
   ros__parameters:
+    use_hardware: false
     sleep_time: 5
     usb_device:
       left_right: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0

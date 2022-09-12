@@ -47,6 +47,7 @@
   </link>
 
   <link name="phi_link"/>
+  <link name="depart"/>
 
   <!-- joint settings -->
   <joint name="theta_joint" type="continuous">
@@ -78,6 +79,12 @@
     <origin xyz="0.345 0.0 -0.0235" rpy="0.0 0.0 0.0"/>
     <axis xyz="0.0 0.0 1.0"/>
     <limit lower="${-pi}" upper="${pi}" effort="10.0" velocity="${10*pi}"/>
+  </joint>
+
+  <joint name="depart_joint" type="fixed">
+    <parent link="fix_base"/>
+    <child link="depart"/>
+    <origin xyz="0.55 0.55 0.225" rpy="0.0 0.0 ${-pi/2}"/>
   </joint>
 
 </robot>
