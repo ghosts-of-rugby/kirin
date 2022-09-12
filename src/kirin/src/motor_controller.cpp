@@ -69,6 +69,8 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
         declare_parameter("z.max_speed", 1.0));
 
     // motor_right = std::make_optional<ddt::Motor>();
+  } else {
+    RCLCPP_WARN(this->get_logger(), "motor hardware deactivated");
   }
 
   rclcpp::QoS qos(rclcpp::KeepLast(2));

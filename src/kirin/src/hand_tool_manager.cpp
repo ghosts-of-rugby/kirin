@@ -36,6 +36,8 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
     std::string pump_usb = declare_parameter("usb_device.pump_arduino", "");
     pump_arduino_uart_
         = std::make_shared<ddt::Uart>("/dev/" + pump_usb, ddt::Uart::BaudRate::B_115200);
+  } else {
+    RCLCPP_WARN(this->get_logger(), "hardware deactivated");
   }
 
   std::string mesh_directory = "package://kirin/resources/light";
@@ -221,7 +223,7 @@ bool HandToolManager::SendDataToArduino(uint8_t data, const std::chrono::millise
 
   auto start = this->get_clock()->now();
 
-  while (true) {
+  while (rclcpp::ok()) {
     auto now = this->get_clock()->now();
     if (now - start > timeout) {
       RCLCPP_WARN(this->get_logger(), "Sending data to arduino is failed");

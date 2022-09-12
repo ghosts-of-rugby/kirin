@@ -76,11 +76,11 @@ def generate_launch_description():
 
   kirin_main_executor = Node(
     package='kirin', executable='kirin_main_executor', output='screen',
-    parameters=[params_file, {'use_hardware', use_hardware}]
+    parameters=[params_file, {'use_hardware': use_hardware}]
   )
 
   jagariko_marker_publiser = Node(
-    package='kirin', executable='jagariko_marker_publisher'
+    package='kirin', executable='jagariko_marker_publisher', output='screen'
   )
 
   jsk_visualize_node = Node(
