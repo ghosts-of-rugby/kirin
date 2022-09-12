@@ -11,12 +11,14 @@ double CalcR(double l, double x, double y, double psi) {
 }
 
 double CalcPhi(double l, double x, double y, double psi) {
+  if(std::abs(std::atan2(y, x) - psi) <= 0.0001) return 0.0;
   double out[2];
   model::ik_phi(l, psi, x, y, out);
   return isnan(out[kIkIndex]) ? 0.0 : out[kIkIndex];
 }
 
 double CalcTheta(double l, double x, double y, double psi) {
+  if(std::abs(std::atan2(y, x) - psi) <= 0.0001) return 0.0;
   double out[2];
   model::ik_theta(l, psi, x, y, out);
   return isnan(out[kIkIndex]) ? 0.0 : out[kIkIndex];
