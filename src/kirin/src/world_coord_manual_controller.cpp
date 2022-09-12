@@ -7,6 +7,7 @@
 #include "kirin/frame.hpp"
 #include "kirin/machine.hpp"
 #include <iostream>
+#include <algorithm>
 
 using namespace std::chrono_literals;
 
@@ -20,10 +21,18 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       current_bellows_frame_{frame::kBellowsTop},
       move_mode_{kirin_types::MoveMode::Manual},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
-  velocity_ratio.x   = declare_parameter("velocity_ratio.x", 0.0);
-  velocity_ratio.y   = declare_parameter("velocity_ratio.y", 0.0);
-  velocity_ratio.z   = declare_parameter("velocity_ratio.z", 0.0);
-  velocity_ratio.psi = declare_parameter("velocity_ratio.psi", 0.0);
+  velocity_ratio_normal_ = {.x   = declare_parameter("velocity_ratio.normal.x", 0.0),
+                            .y   = declare_parameter("velocity_ratio.normal.y", 0.0),
+                            .z   = declare_parameter("velocity_ratio.normal.z", 0.0),
+                            .psi = declare_parameter("velocity_ratio.normal.psi", 0.0)};
+  velocity_ratio_adjust_ = {.x   = declare_parameter("velocity_ratio.adjust.x", 0.0),
+                            .y   = declare_parameter("velocity_ratio.adjust.y", 0.0),
+                            .z   = declare_parameter("velocity_ratio.adjust.z", 0.0),
+                            .psi = declare_parameter("velocity_ratio.adjust.psi", 0.0)};
+
+  z_auto_ = {.ratio           = declare_parameter("z_auto.ratio", 2.0),
+             .max_speed       = declare_parameter("z_auto.max_speed", 0.3),
+             .approach_offset = declare_parameter("z_auto.approach_offset", 0.05)};
 
   // transform listener
   tf_buffer_          = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -43,6 +52,14 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterButtonPressedCallback(
       Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
+
+  this->RegisterButtonPressedCallback(Button::RB, [this]() -> void {
+    z_auto_.enabled = true;
+    auto next_state
+        = (z_auto_.state == ZAutoState::Approach) ? ZAutoState::Depart : ZAutoState::Approach;
+    z_auto_.state = next_state;
+    RCLCPP_INFO(this->get_logger(), "Z auto movement start");
+  });
 
   // this->RegisterButtonPressedCallback(
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
@@ -66,9 +83,34 @@ WorldCoordManualController::~WorldCoordManualController() {}
 
 geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   geometry_msgs::msg::Pose pose;
-  vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickY) * -1.0 * velocity_ratio.x,
-                         this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.y,
+  auto velocity_ratio
+      = (z_auto_.state == ZAutoState::Approach) ? velocity_ratio_adjust_ : velocity_ratio_normal_;
+  vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.x,
+                         this->GetAxis(JoyController::Axis::LStickY) * 1.0 * velocity_ratio.y,
                          this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
+
+  /* if z auto movement, overwrite z velocity */
+  if (z_auto_.enabled) {
+    std::string target;
+    double offset;
+    if(z_auto_.state == ZAutoState::Approach) {
+      target = frame::pick::k1st;
+      offset = z_auto_.approach_offset;
+    } else {
+      target = frame::kDepart;
+      offset = 0.0;
+    }
+    auto z_auto_input = GenerateAutoZVelocity(target, offset);
+    if (z_auto_input.has_value()) {
+      auto [z_vel, z_distance] = z_auto_input.value();
+      RCLCPP_INFO(this->get_logger(), "z auto input: %f, z_distance: %f", z_vel, z_distance);
+      vel_.z() = z_vel;
+      if (std::abs(z_distance - sgn(z_distance) * offset) <= 0.005) {
+        z_auto_.enabled = false;
+        RCLCPP_INFO(this->get_logger(), "z auto movement finished!");
+      }
+    }
+  }
   pos_ += vel_ * loop_ms_ * 0.001;
   pose.position = Eigen::toMsg(pos_);
 
@@ -267,4 +309,18 @@ void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mod
   else if (mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
   else /* mode == kirin_types::MoveMode::Stop) */ msg.mode = kirin_msgs::msg::MoveMode::STOP;
   move_mode_pub_->publish(std::move(msg));
+}
+
+std::optional<std::tuple<double, double>> WorldCoordManualController::GenerateAutoZVelocity(
+    const std::string& target, double offset) {
+  auto pose = GetPoseFromTf(current_bellows_frame_, target);
+  if (pose.has_value()) {
+    double RATIO       = 5.0;
+    double MAX_SPEED   = 0.3;
+    double z_distance  = pose.value().position.z;
+    double input_z_vel = z_auto_.ratio * (z_distance - sgn(z_distance) * offset);
+    return std::tie(std::clamp(input_z_vel, -z_auto_.max_speed, z_auto_.max_speed), z_distance);
+  } else {
+    return std::nullopt;
+  }
 }

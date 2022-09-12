@@ -1,10 +1,20 @@
 world_coord_controller:
   ros__parameters:
     velocity_ratio:
-      x: 0.3
-      y: 0.3
-      z: 0.2
-      psi: 0.3
+      normal:
+        x: 0.3
+        y: 0.3
+        z: 0.2
+        psi: 0.3
+      adjust:
+        x: 0.05
+        y: 0.05
+        z: 0.04
+        psi: 0.05
+    z_auto:
+      ratio: 2.0
+      max_speed: 0.3
+      approach_offset: 0.05
 
 joint_state_publisher:
   ros__parameters:

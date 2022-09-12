@@ -18,6 +18,11 @@
 
 using RPYTuple = std::tuple<double, double, double>;
 
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
 class WorldCoordManualController : public JoyController {
  public:
   struct VelocityRatio {
@@ -25,6 +30,17 @@ class WorldCoordManualController : public JoyController {
     double y;
     double z;
     double psi;
+  };
+  enum class ZAutoState {
+    Approach,
+    Depart
+  };
+  struct ZAuto {
+    bool enabled = false;
+    ZAutoState state = ZAutoState::Depart;
+    double ratio;
+    double max_speed;
+    double approach_offset;
   };
   explicit WorldCoordManualController(const std::string& node_name,
                                       const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
@@ -40,12 +56,13 @@ class WorldCoordManualController : public JoyController {
   double dpsi_;
   int loop_ms_{20};
   std::string current_bellows_frame_;
-  VelocityRatio velocity_ratio;
+  VelocityRatio velocity_ratio_normal_;
+  VelocityRatio velocity_ratio_adjust_;
+  ZAuto z_auto_;
   bool is_air_on{false};
 
   kirin_types::HandState current_state_;
   kirin_types::MoveMode move_mode_;
-
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
@@ -68,6 +85,9 @@ class WorldCoordManualController : public JoyController {
   void ChangePumpStateClientRequest();
   void ChangeHandStateClientRequest();
   void ModeChangeHandler();
+
+  std::optional<std::tuple<double, double>> GenerateAutoZVelocity(const std::string& target,
+                                                                  double offset);
 
   void PublishBellowsMsg(const std::string& bellows);
   void PublishModeMsg(const kirin_types::MoveMode& mode);
