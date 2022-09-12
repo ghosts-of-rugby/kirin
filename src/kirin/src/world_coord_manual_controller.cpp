@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 WorldCoordManualController::WorldCoordManualController(const std::string& node_name,
                                                        const rclcpp::NodeOptions& options)
     : JoyController(node_name, options),
-      pos_(0.546 + 0.05, 0.00, 0.127),
+      pos_(0.546 + 0.05, 0.01, 0.127),
       vel_(0.0, 0.0, 0.0),
       psi_(0.0),
       dpsi_(0.0),
