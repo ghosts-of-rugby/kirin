@@ -13,6 +13,17 @@ const std::string kPhiLink{"phi_link"};
 const std::string kBellowsTop{"bellows_top"};
 const std::string kBellowsRight{"bellows_right"};
 const std::string kBellowsLeft{"bellows_left"};
+
+const std::string kDepart{"depart"};
+
+namespace pick {
+const std::string k1st{"pick_our_1"};
+const std::string k2nd{"pick_our_2"};
+const std::string k3rd{"pick_our_3"};
+const std::string k4th{"pick_our_4"};
+const std::string k5th{"pick_our_5"};
+}  // namespace pick
+
 }  // namespace frame
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_FRAME */

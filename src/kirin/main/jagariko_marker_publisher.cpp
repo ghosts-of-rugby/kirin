@@ -48,11 +48,11 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     /* create pick target transform */
     // out field pick target
     std::vector<std::tuple<int, std::string>> target = {
-        {3,  "pick_our_1"},
-        {6,  "pick_our_2"},
-        {9,  "pick_our_3"},
-        {12, "pick_our_4"},
-        {15, "pick_out_5"}
+        {3,  frame::pick::k1st},
+        {6,  frame::pick::k2nd},
+        {9,  frame::pick::k3rd},
+        {12, frame::pick::k4th},
+        {15, frame::pick::k5th}
     };
     for (const auto& [idx, frame] : target) {
       auto [x, y] = jaga_poses_.at(idx);
@@ -77,7 +77,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     marker_timer_ = create_wall_timer(
         50ms, std::bind(&JagarikoMarkersPublisher::PublishJagarikoMarker, this));
     transform_timer_
-        = create_wall_timer(20ms, std::bind(&JagarikoMarkersPublisher::PublishTransform, this));
+        = create_wall_timer(10ms, std::bind(&JagarikoMarkersPublisher::PublishTransform, this));
   }
 
  private:
