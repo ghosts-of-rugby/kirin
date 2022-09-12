@@ -35,7 +35,7 @@ class MotorController : public rclcpp::Node {
       const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
  private:
-  bool is_simulation;
+  bool use_hardware_;
   std::chrono::milliseconds sleep_time;
   std::optional<ddt::Motor> motor_right, motor_left, motor_theta, motor_z;
   std::optional<ControllerVelocityInput> controller_right, controller_left,

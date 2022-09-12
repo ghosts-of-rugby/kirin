@@ -1,3 +1,5 @@
+import os
+
 from ament_index_python.packages import get_package_share_path
 
 from launch import LaunchDescription
@@ -9,13 +11,24 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
+  # get urdf and rviz config path
   kirin_package_path = get_package_share_path('kirin')
-  urdf_path = kirin_package_path / 'urdf/kirin.urdf.xacro'
-  rviz_config_path = kirin_package_path / 'rviz/kirin.rviz'
+  urdf_path = os.path.join(kirin_package_path, 'urdf/kirin.urdf.xacro')
+  rviz_config_path = os.path.join(kirin_package_path, 'rviz/kirin.rviz')
 
+  # parameter file
   params_file = LaunchConfiguration(
     'params', default=[ThisLaunchFileDir(), '/params.yaml'])
+  
+  # create the launch configuration variables
+  use_hardware = LaunchConfiguration('use_hardware')
 
+  # declare launch argument
+  declare_use_hardware = DeclareLaunchArgument(
+    'use_hardware',
+    default_value='true',
+    description='Whether to connect hardware (motor and arduino)'
+  )
 
   # robot_state_publisher
   robot_description = ParameterValue(Command(['xacro ', str(urdf_path)]), value_type=str)
@@ -63,7 +76,7 @@ def generate_launch_description():
 
   kirin_main_executor = Node(
     package='kirin', executable='kirin_main_executor', output='screen',
-    parameters=[params_file]
+    parameters=[params_file, {'use_hardware', use_hardware}]
   )
 
   jagariko_marker_publiser = Node(
@@ -75,6 +88,7 @@ def generate_launch_description():
   )
 
   return LaunchDescription([
+    declare_use_hardware,
     joy_node,
     kirin_main_executor,
     joint_state_publisher_node,

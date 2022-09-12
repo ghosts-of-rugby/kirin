@@ -30,6 +30,14 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
                                       std::placeholders::_1,
                                       std::placeholders::_2,
                                       std::placeholders::_3)) {
+  /* open arduino */
+  use_hardware_ = declare_parameter("use_hardware", false);
+  if (use_hardware_) {
+    std::string pump_usb = declare_parameter("usb_device.pump_arduino", "");
+    pump_arduino_uart_
+        = std::make_shared<ddt::Uart>("/dev/" + pump_usb, ddt::Uart::BaudRate::B_115200);
+  }
+
   std::string mesh_directory = "package://kirin/resources/light";
 
   resource_map_ = {
@@ -209,33 +217,35 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
 }
 
 bool HandToolManager::SendDataToArduino(uint8_t data, const std::chrono::milliseconds& timeout) {
+  if (!use_hardware_) return true;
+
   auto start = this->get_clock()->now();
 
-  // while (true) {
-  //   auto now = this->get_clock()->now();
-  //   if (now - start > timeout) {
-  //     RCLCPP_WARN(this->get_logger(), "Sending data to arduino is failed");
-  //     return false;
-  //   }
+  while (true) {
+    auto now = this->get_clock()->now();
+    if (now - start > timeout) {
+      RCLCPP_WARN(this->get_logger(), "Sending data to arduino is failed");
+      return false;
+    }
 
-  //   arduino_uart_.Send({data});
-  //   std::this_thread::sleep_for(500us);
-  //   auto rececive = arduino_uart_.Receive();
+    pump_arduino_uart_->Send({data});
+    std::this_thread::sleep_for(500us);
+    auto rececive = pump_arduino_uart_->Receive();
 
-  //   if (rececive.size() == 0) {
-  //     RCLCPP_WARN(this->get_logger(), "receive size is 0");
-  //     std::this_thread::sleep_for(100ms);
-  //     continue;
-  //   }
-  //   if (rececive.at(0) == data) {
-  //     // RCLCPP_INFO(this->get_logger(), "Successfully data returned");
-  //     return true;
-  //   } else {
-  //     RCLCPP_WARN(this->get_logger(), "Wrong data returned");
-  //     std::this_thread::sleep_for(100ms);
-  //     continue;
-  //   }
-  // }
+    if (rececive.size() == 0) {
+      RCLCPP_WARN(this->get_logger(), "receive size is 0");
+      std::this_thread::sleep_for(100ms);
+      continue;
+    }
+    if (rececive.at(0) == data) {
+      // RCLCPP_INFO(this->get_logger(), "Successfully data returned");
+      return true;
+    } else {
+      RCLCPP_WARN(this->get_logger(), "Wrong data returned");
+      std::this_thread::sleep_for(100ms);
+      continue;
+    }
+  }
   return true;
 }
 

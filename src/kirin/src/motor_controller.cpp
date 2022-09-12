@@ -36,9 +36,9 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
       motor_callback_(
           std::bind(&MotorController::MotorStateVectorReceiveCallback, this,
                     std::placeholders::_1)) {
-  is_simulation = declare_parameter("is_simulation", false);
+  use_hardware_ = declare_parameter("use_hardware", false);
 
-  if (!is_simulation) {
+  if (use_hardware_) {
     std::string usb_device_left_right =
         declare_parameter("usb_device.left_right", "");
     std::string usb_device_theta_z =
@@ -95,16 +95,7 @@ void MotorController::MotorStateVectorReceiveCallback(
 
   auto current_motor = std::make_unique<MotorStateVector>();
 
-  if (is_simulation) {
-    current_motor->angle.left = angle.left;
-    current_motor->angle.right = angle.right;
-    current_motor->angle.theta = angle.theta;
-    current_motor->angle.z = angle.z;
-    current_motor->velocity.left = velocity.left;
-    current_motor->velocity.right = velocity.right;
-    current_motor->velocity.theta = velocity.theta;
-    current_motor->velocity.z = velocity.theta;
-  } else {
+  if(use_hardware_) {
     current_motor->angle.left = 0;
     current_motor->angle.right = 0;
     current_motor->angle.theta = 0;
@@ -140,6 +131,15 @@ void MotorController::MotorStateVectorReceiveCallback(
         controller_left->velocity * controller_left->dir;
     current_motor->angle.z = controller_z->angle * controller_z->dir;
     current_motor->velocity.z = controller_z->velocity * controller_z->dir;
+  } else {
+    current_motor->angle.left = angle.left;
+    current_motor->angle.right = angle.right;
+    current_motor->angle.theta = angle.theta;
+    current_motor->angle.z = angle.z;
+    current_motor->velocity.left = velocity.left;
+    current_motor->velocity.right = velocity.right;
+    current_motor->velocity.theta = velocity.theta;
+    current_motor->velocity.z = velocity.theta;
   }
 
   /* 受け取ったデータをpublish */

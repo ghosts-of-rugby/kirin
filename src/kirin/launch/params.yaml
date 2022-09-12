@@ -26,9 +26,13 @@ joy_node:
     autorepeat_rate: 50.0 # [Hz]
     # coalesce_interval_ms: 20  # [ms]
 
+hand_tool_manager:
+  ros__parameters:
+    usb_device:
+      pump_arduino: "ttyACM0"
+
 motor_controller:
   ros__parameters:
-    is_simulation: false
     sleep_time: 5
     usb_device:
       left_right: usb-FTDI_FT232R_USB_UART_AQ0287SJ-if00-port0
