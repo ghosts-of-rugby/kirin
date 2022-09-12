@@ -66,7 +66,10 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       double share_z = 0.035;
       double z       = 0.08 + share_z;
       double yaw     = 0.0;
-      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, "pick_share"));
+      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, frame::pick::kShare));
+    }
+    // depart position
+    {
     }
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
