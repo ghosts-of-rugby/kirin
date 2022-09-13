@@ -73,6 +73,21 @@ void ControllerCurrentInput::Update(std::optional<ddt::Motor::State> state) {
   }
 }
 
+ControllerCurrentInputWithoutObserver::ControllerCurrentInputWithoutObserver(
+    int dir, double max_current, double Kp_pos, double Kp_vel)
+    : dir(dir), max_current(max_current), Kp_pos(Kp_pos), Kp_vel(Kp_vel) {}
+
+double ControllerCurrentInputWithoutObserver::GetInput(double ref_velocity,
+                                                       double ref_angle) {
+  ref_angle *= dir;
+  ref_velocity *= dir;
+
+  double input =
+      Kp_pos * (ref_angle - angle) + Kp_vel * (ref_velocity - velocity);
+  input = std::clamp(input, -max_current, max_current);
+  return input;
+}
+
 MotorController::MotorController(const rclcpp::NodeOptions& options)
     : Node("motor_controller", options),
       motor_callback_(
@@ -100,14 +115,21 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
     motor_z = ddt::Motor(uart_theta_z, declare_parameter("z.id", 0x06));
     motor_theta = ddt::Motor(uart_theta_z, declare_parameter("theta.id", 0x03));
 
+    motor_right->SetMode(ddt::Motor::DriveMode::Current);
+    motor_left->SetMode(ddt::Motor::DriveMode::Current);
     motor_theta->SetMode(ddt::Motor::DriveMode::Current);
     
-    controller_right = ControllerVelocityInput(
-        declare_parameter("right.dir", 1), declare_parameter("right.Kp", 1.0),
-        declare_parameter("right.max_speed", 1.0));
-    controller_left = ControllerVelocityInput(
-        declare_parameter("left.dir", 1), declare_parameter("left.Kp", 1.0),
-        declare_parameter("left.max_speed", 1.0));
+    controller_right = ControllerCurrentInputWithoutObserver(
+        declare_parameter("right.dir", 1),
+        declare_parameter("right.max_current", 2.0),
+        declare_parameter("right.Kp_pos", 0.5),
+        declare_parameter("right.Kp_vel", 0.1));
+    controller_left = ControllerCurrentInputWithoutObserver(
+        declare_parameter("left.dir", -1),
+        declare_parameter("left.max_current", 2.0),
+        declare_parameter("left.Kp_pos", 0.5),
+        declare_parameter("left.Kp_vel", 0.1));
+
     controller_z = ControllerVelocityInput(
         declare_parameter("z.dir", 1), declare_parameter("z.Kp", 1.0),
         declare_parameter("z.max_speed", 1.0));
@@ -174,9 +196,9 @@ void MotorController::MotorStateVectorReceiveCallback(
     current_motor->velocity.z = 0;
 
     /* process of right and z motor */
-    double right_velocity =
+    double right_current =
         controller_right->GetInput(velocity.right, angle.right);
-    motor_right->SendVelocityCommand(right_velocity);
+    motor_right->SendCurrentCommand(right_current);
     double z_velocity = controller_z->GetInput(velocity.z, angle.z);
     motor_z->SendVelocityCommand(z_velocity);
     std::this_thread::sleep_for(8ms);
@@ -186,8 +208,8 @@ void MotorController::MotorStateVectorReceiveCallback(
     controller_z->Update(state_z);
 
     /* process of left and theta motor */
-    double left_velocity = controller_left->GetInput(velocity.left, angle.left);
-    motor_left->SendVelocityCommand(left_velocity);
+    double left_current = controller_left->GetInput(velocity.left, angle.left);
+    motor_left->SendCurrentCommand(left_current);
     double theta_current =
         controller_theta->GetInput(velocity.theta, angle.theta);
     motor_theta->SendCurrentCommand(theta_current);

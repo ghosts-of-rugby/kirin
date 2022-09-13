@@ -47,6 +47,16 @@ struct ControllerCurrentInput : public ControllerBase {
   double GetInput(double ref_velocity, double ref_angle) override;
 };
 
+struct ControllerCurrentInputWithoutObserver : public ControllerBase {
+  int dir = 1;
+  double Kp_pos, Kp_vel;
+  double max_current;
+  ControllerCurrentInputWithoutObserver(int dir,             //
+                                        double max_current,  //
+                                        double Kp_pos, double Kp_vel);
+  double GetInput(double ref_velocity, double ref_angle) override;
+};
+
 class MotorController : public rclcpp::Node {
  public:
   using MotorStateVector = kirin_msgs::msg::MotorStateVector;
@@ -57,8 +67,9 @@ class MotorController : public rclcpp::Node {
   bool use_hardware_;
   std::chrono::milliseconds sleep_time;
   std::optional<ddt::Motor> motor_right, motor_left, motor_theta, motor_z;
-  std::optional<ControllerVelocityInput> controller_right, controller_left,
-      controller_z;
+  std::optional<ControllerVelocityInput> controller_z;
+  std::optional<ControllerCurrentInputWithoutObserver> controller_right,
+      controller_left;
   std::optional<ControllerCurrentInput> controller_theta;
 
   void ShowWarning(const std::array<bool, 4>& state_has_value_arr);
