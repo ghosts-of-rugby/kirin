@@ -4,10 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /jsk visualization1
-        - /jsk visualization1/motor viewer1
+        - /jsk visualization1/ref motor viewer1/Ref M Theta1/Topic1
       Splitter Ratio: 0.5060483813285828
-    Tree Height: 450
+    Tree Height: 674
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -55,6 +54,8 @@ Visualization Manager:
           Value: true
         bellows_top:
           Value: true
+        depart:
+          Value: true
         field:
           Value: true
         fix_base:
@@ -89,6 +90,8 @@ Visualization Manager:
           field:
             {}
           fix_base:
+            depart:
+              {}
             theta_link:
               z_link:
                 r_link:
@@ -131,6 +134,10 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        depart:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         fix_base:
           Alpha: 1
           Show Axes: false
@@ -202,11 +209,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        field:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: Field
       TF Prefix: ""
       Update Interval: 0
@@ -388,13 +390,13 @@ Visualization Manager:
           Displays:
             - Class: jsk_rviz_plugin/PieChart
               Enabled: true
-              Name: Motor Left
+              Name: Ref M Left
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
                 History Policy: Keep Last
                 Reliability Policy: Reliable
-                Value: /rviz/motor/left
+                Value: /rviz/motor/left/reference
               Value: true
               auto color change: false
               background color: 0; 0; 0
@@ -413,13 +415,13 @@ Visualization Manager:
               top: 320
             - Class: jsk_rviz_plugin/PieChart
               Enabled: true
-              Name: Motor Right
+              Name: Ref M Right
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
                 History Policy: Keep Last
                 Reliability Policy: Reliable
-                Value: /rviz/motor/right
+                Value: /rviz/motor/right/reference
               Value: true
               auto color change: false
               background color: 0; 0; 0
@@ -438,13 +440,13 @@ Visualization Manager:
               top: 460
             - Class: jsk_rviz_plugin/PieChart
               Enabled: true
-              Name: Motor Theta
+              Name: Ref M Theta
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
                 History Policy: Keep Last
                 Reliability Policy: Reliable
-                Value: /rviz/motor/theta
+                Value: /rviz/motor/theta/reference
               Value: true
               auto color change: false
               background color: 0; 0; 0
@@ -463,13 +465,13 @@ Visualization Manager:
               top: 600
             - Class: jsk_rviz_plugin/PieChart
               Enabled: true
-              Name: Motor Z
+              Name: Ref M Z
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
                 History Policy: Keep Last
                 Reliability Policy: Reliable
-                Value: /rviz/motor/z
+                Value: /rviz/motor/z/reference
               Value: true
               auto color change: false
               background color: 0; 0; 0
@@ -487,7 +489,111 @@ Visualization Manager:
               text size: 12
               top: 740
           Enabled: true
-          Name: motor viewer
+          Name: ref motor viewer
+        - Class: rviz_common/Group
+          Displays:
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Cur M Left
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/left/current
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 170; 170; 255
+              left: 140
+              max color: 255; 0; 0
+              max value: 1000
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 320
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Cur M Right
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/right/current
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 170; 170; 255
+              left: 140
+              max color: 255; 0; 0
+              max value: 1000
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 460
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Cur M Theta
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/theta/current
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 170; 170; 255
+              left: 140
+              max color: 255; 0; 0
+              max value: 750
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 600
+            - Class: jsk_rviz_plugin/PieChart
+              Enabled: true
+              Name: Cur M Z
+              Topic:
+                Depth: 5
+                Durability Policy: Volatile
+                History Policy: Keep Last
+                Reliability Policy: Reliable
+                Value: /rviz/motor/z/current
+              Value: true
+              auto color change: false
+              background color: 0; 0; 0
+              backround alpha: 0
+              clockwise rotate direction: false
+              foreground alpha: 0.699999988079071
+              foreground alpha 2: 0.4000000059604645
+              foreground color: 170; 170; 255
+              left: 140
+              max color: 255; 0; 0
+              max value: 250
+              min value: 0
+              show caption: true
+              size: 110
+              text size: 12
+              top: 740
+          Enabled: true
+          Name: cur motor viewer
       Enabled: true
       Name: jsk visualization
   Enabled: true
@@ -533,25 +639,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.7677503824234009
+      Distance: 2.3372297286987305
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.6336660385131836
-        Y: -0.041484713554382324
-        Z: -0.030191855505108833
+        X: -0.5073259472846985
+        Y: -0.022592369467020035
+        Z: 0.009475705213844776
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6047972440719604
+      Pitch: 0.7247971296310425
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.7172980308532715
+      Yaw: 4.697302341461182
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 2.67037034034729
@@ -596,16 +702,16 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1016
+  Height: 1376
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001f20000039efc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000024d000000c900fffffffb0000000a0056006900650077007301000002900000014b000000a400fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000502fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000005480000039e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001f200000502fc0200000009fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003f00000330000000cc00fffffffb0000000a005600690065007700730100000375000001cc000000a900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f00000502fc0200000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000007d20000050200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Tool Properties:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1856
-  X: 64
-  Y: 27
+  Width: 2506
+  X: 1494
+  Y: 1147

@@ -13,7 +13,6 @@ class JskVisualizeNode : public rclcpp::Node {
  public:
   explicit JskVisualizeNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
       : Node("jsk_visualize_node", options),
-        joint_callback_(std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1)),
         timer_callback_(std::bind(&JskVisualizeNode::TimerCallback, this)) {
     using namespace std::chrono_literals;  // NOLINT
     rclcpp::QoS qos(rclcpp::KeepLast(10));
@@ -22,12 +21,14 @@ class JskVisualizeNode : public rclcpp::Node {
     joint_sub_ = create_subscription<sensor_msgs::msg::JointState>(
         "joint_states", qos,
         std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1));
-    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>(
-        "motor/reference", qos,
-        std::bind(&JskVisualizeNode::MotorCallback, this, "reference", std::placeholders::_1));
-    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>(
-        "motor/current", qos,
-        std::bind(&JskVisualizeNode::MotorCallback, this, "current", std::placeholders::_1));
+    ref_motor_callback_
+        = std::bind(&JskVisualizeNode::MotorCallback, this, "reference", std::placeholders::_1);
+    cur_motor_callback_
+        = std::bind(&JskVisualizeNode::MotorCallback, this, "current", std::placeholders::_1);
+    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/reference", qos,
+                                                                            ref_motor_callback_);
+    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/current", qos,
+                                                                            cur_motor_callback_);
 
     /* show joint state */
     {
@@ -131,8 +132,8 @@ class JskVisualizeNode : public rclcpp::Node {
     motor_pub.at(Motor::Z)->publish(std::move(z_msg));
   }
 
-  std::function<void(const sensor_msgs::msg::JointState::UniquePtr)> joint_callback_;
-  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> motor_callback_;
+  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> ref_motor_callback_;
+  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> cur_motor_callback_;
   std::function<void()> timer_callback_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_sub_;
   rclcpp::Subscription<kirin_msgs::msg::MotorStateVector>::SharedPtr ref_motor_sub_;
