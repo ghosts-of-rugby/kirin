@@ -202,6 +202,19 @@ void MotorController::MotorStateVectorReceiveCallback(
       {state_left.has_value(), state_right.has_value(), state_z.has_value(), state_theta.has_value()}; 
     ShowWarning(state_has_value_arr);
 
+    if (state_z.has_value()) {
+      if(state_z->over_heat)
+        RCLCPP_ERROR(this->get_logger(), "!!!!! z motor over heat !!!!!!!!");
+      if(state_z->stall)
+        RCLCPP_ERROR(this->get_logger(), "!!!!! z motor stall !!!!!!!!");
+      if(state_z->phase_over_current) 
+        RCLCPP_ERROR(this->get_logger(), "!!!!! z motor phase over current !!!!!!!!");
+      if(state_z->bus_over_currnet)
+        RCLCPP_ERROR(this->get_logger(), "!!!!! z motor bus over current !!!!!!!!");
+      if(state_z->sensor_fault)
+        RCLCPP_ERROR(this->get_logger(), "!!!!! z motor sensor fault !!!!!!!!");
+    }
+
     /* substitute current motor state */
     current_motor->angle.right =
         controller_right->angle * controller_right->dir;
