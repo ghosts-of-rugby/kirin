@@ -46,13 +46,13 @@ motor_controller:
     right:
       id: 0x06
       dir: 1
-      Kp: 5.0
-      max_speed: 5.0
+      Kp: 4.0
+      max_speed: 10.0
     left:
       id: 0x09
       dir: -1
-      Kp: 5.0
-      max_speed: 5.0
+      Kp: 4.0
+      max_speed: 10.0
     theta:
       id: 0x06
       dir: 1
@@ -66,5 +66,5 @@ motor_controller:
     z:
       id: 0x09
       dir: -1
-      Kp: 5.0
+      Kp: 4.0
       max_speed: 10.0
