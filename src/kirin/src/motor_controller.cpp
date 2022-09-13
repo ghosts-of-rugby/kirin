@@ -25,22 +25,53 @@ double ControllerVelocityInput::GetInput(double ref_velocity,
   return input;
 }
 
-ControllerVelocityInput::ControllerVelocityInput(int dir, double Kp, double max_speed) {
+ControllerVelocityInput::ControllerVelocityInput(int dir, double Kp,
+                                                 double max_speed) {
   this->dir = dir;
   this->Kp = Kp;
   this->max_speed = max_speed;
 }
 
-ControllerCurrentInput::ControllerCurrentInput(
-    int dir, double max_current, double obs_K, double obs_pole1, double obs_pole2)
-  : dir(dir), max_current(max_current), observer(obs_K, obs_pole1, obs_pole2) {
-}
+ControllerCurrentInput::ControllerCurrentInput(int dir, double max_current,
+                                               double Kp_pos, double Kp_vel,
+                                               double obs_K, double obs_pole1,
+                                               double obs_pole2)
+    : dir(dir),
+      pre_input(0.0),
+      max_current(max_current),
+      Kp_pos(Kp_pos),
+      Kp_vel(Kp_vel),
+      observer(obs_K, obs_pole1, obs_pole2) {}
 
 double ControllerCurrentInput::GetInput(double ref_velocity, double ref_angle) {
-  // TODO
-  return 0.0;
+  ref_angle *= dir;
+  ref_velocity *= dir;
+  if (is_first_time) {
+    pre_update_time = std::chrono::high_resolution_clock::now();
+    is_first_time = false;
+  }
+  double input = Kp_pos * (ref_angle - angle) +
+                 Kp_vel * (ref_velocity - velocity) + this->dist_est;
+  input = std::clamp(input, -max_current, max_current);
+  pre_input = input;
+  return input;
 }
 
+void ControllerCurrentInput::Update(std::optional<ddt::Motor::State> state) {
+  using second = std::chrono::duration<double>;
+  this->state = state;
+  if (state.has_value()) {
+    angle = -filter.Update(state->angle);
+    velocity = state->velocity;
+    auto now = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration_cast<second>(now - pre_update_time);
+    auto [v_e, d_e] =
+        observer.Update(pre_input, velocity, dt);  // 速度・外乱の推定値
+    this->vel_est = v_e;
+    this->dist_est = d_e;
+    pre_update_time = now;
+  }
+}
 
 MotorController::MotorController(const rclcpp::NodeOptions& options)
     : Node("motor_controller", options),
@@ -79,12 +110,13 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
         declare_parameter("z.dir", 1), declare_parameter("z.Kp", 1.0),
         declare_parameter("z.max_speed", 1.0));
     controller_theta = ControllerCurrentInput(
-      declare_parameter("theta.dir", 1),
-      declare_parameter("theta.max_current", 3.0),
-      declare_parameter("theta.observer.K", 15.7),
-      declare_parameter("theta.observer.pole1", -20.0),
-      declare_parameter("theta.observer.pole2", -10.0)
-    );
+        declare_parameter("theta.dir", 1),
+        declare_parameter("theta.max_current", 3.0),
+        declare_parameter("theta.Kp_pos", 0.3),
+        declare_parameter("theta.Kp_vel", 0.3),
+        declare_parameter("theta.observer.K", 15.7),
+        declare_parameter("theta.observer.pole1", -20.0),
+        declare_parameter("theta.observer.pole2", -10.0));
 
     // motor_right = std::make_optional<ddt::Motor>();
   } else {
@@ -119,7 +151,7 @@ void MotorController::MotorStateVectorReceiveCallback(
 
   auto current_motor = std::make_unique<MotorStateVector>();
 
-  if(use_hardware_) {
+  if (use_hardware_) {
     current_motor->angle.left = 0;
     current_motor->angle.right = 0;
     current_motor->angle.theta = 0;
@@ -144,7 +176,8 @@ void MotorController::MotorStateVectorReceiveCallback(
     /* process of left and theta motor */
     double left_velocity = controller_left->GetInput(velocity.left, angle.left);
     motor_left->SendVelocityCommand(left_velocity);
-    double theta_current = controller_theta->GetInput(velocity.theta, angle.theta);
+    double theta_current =
+        controller_theta->GetInput(velocity.theta, angle.theta);
     motor_theta->SendCurrentCommand(theta_current);
     std::this_thread::sleep_for(5ms);
     auto state_left = motor_left->ReceiveSpinMotorFeedback();
@@ -153,10 +186,10 @@ void MotorController::MotorStateVectorReceiveCallback(
     controller_theta->Update(state_theta);
 
     /* show warning message */
-    if(!state_left.has_value()) ShowWarning("left");
-    if(!state_right.has_value()) ShowWarning("right");
-    if(!state_z.has_value()) ShowWarning("z");
-    if(!state_theta.has_value()) ShowWarning("theta");
+    if (!state_left.has_value()) ShowWarning("left");
+    if (!state_right.has_value()) ShowWarning("right");
+    if (!state_z.has_value()) ShowWarning("z");
+    if (!state_theta.has_value()) ShowWarning("theta");
 
     /* substitute current motor state */
     current_motor->angle.right =
@@ -171,8 +204,10 @@ void MotorController::MotorStateVectorReceiveCallback(
     current_motor->angle.z = controller_z->angle * controller_z->dir;
     current_motor->velocity.z = controller_z->velocity * controller_z->dir;
 
-    current_motor->angle.theta = controller_theta->angle * controller_theta->dir;
-    current_motor->velocity.theta = controller_theta->velocity * controller_theta->dir;
+    current_motor->angle.theta =
+        controller_theta->angle * controller_theta->dir;
+    current_motor->velocity.theta =
+        controller_theta->velocity * controller_theta->dir;
   } else {
     current_motor->angle.left = angle.left;
     current_motor->angle.right = angle.right;

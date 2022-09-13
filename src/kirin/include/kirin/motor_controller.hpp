@@ -3,6 +3,7 @@
 
 #include <kirin_msgs/msg/motor_state_vector.hpp>
 #include <memory>
+#include <chrono>
 #include <rclcpp/rclcpp.hpp>
 
 #include "ddt-motor/angle_filter.hpp"
@@ -28,11 +29,21 @@ struct ControllerVelocityInput : public ControllerBase {
 };
 
 struct ControllerCurrentInput : public ControllerBase {
+  bool is_first_time = true;
   int dir = 1;
+  std::chrono::high_resolution_clock::time_point
+      pre_update_time;     // 前回の更新時刻
+  double pre_input = 0.0;  // 前回の入力
+  double vel_est = 0.0;    // 速度の推定値
+  double dist_est = 0.0;   //外乱の推定値
+  double Kp_pos, Kp_vel;
   double max_current;
   ddt::Observer observer;
-  ControllerCurrentInput(
-    int dir, double max_current, double obs_K, double obs_pole1, double obs_pole2);
+  ControllerCurrentInput(int dir,                       //
+                         double max_current,            //
+                         double Kp_pos, double Kp_vel,  //
+                         double obs_K, double obs_pole1, double obs_pole2);
+  void Update(std::optional<ddt::Motor::State> state);
   double GetInput(double ref_velocity, double ref_angle) override;
 };
 

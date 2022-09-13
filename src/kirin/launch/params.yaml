@@ -57,8 +57,8 @@ motor_controller:
       id: 0x06
       dir: 1
       max_current: 3.0
-      Kp_position: 5.0
-      Kp_velocity: 5.0
+      Kp_pos: 0.3
+      Kp_vel: 0.3
       observer:
         K: 15.7
         pole1: -20.0
