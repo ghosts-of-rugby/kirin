@@ -31,6 +31,17 @@ ControllerVelocityInput::ControllerVelocityInput(int dir, double Kp, double max_
   this->max_speed = max_speed;
 }
 
+ControllerCurrentInput::ControllerCurrentInput(
+    int dir, double max_current, double obs_K, double obs_pole1, double obs_pole2)
+  : dir(dir), max_current(max_current), observer(obs_K, obs_pole1, obs_pole2) {
+}
+
+double ControllerCurrentInput::GetInput(double ref_velocity, double ref_angle) {
+  // TODO
+  return 0.0;
+}
+
+
 MotorController::MotorController(const rclcpp::NodeOptions& options)
     : Node("motor_controller", options),
       motor_callback_(
@@ -55,8 +66,8 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
         ddt::Motor(uart_left_right, declare_parameter("right.id", 0x06));
     motor_left =
         ddt::Motor(uart_left_right, declare_parameter("left.id", 0x09));
-    motor_theta = ddt::Motor(uart_theta_z, declare_parameter("theta.id", 0x03));
     motor_z = ddt::Motor(uart_theta_z, declare_parameter("z.id", 0x06));
+    motor_theta = ddt::Motor(uart_theta_z, declare_parameter("theta.id", 0x03));
 
     controller_right = ControllerVelocityInput(
         declare_parameter("right.dir", 1), declare_parameter("right.Kp", 1.0),
@@ -67,6 +78,13 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
     controller_z = ControllerVelocityInput(
         declare_parameter("z.dir", 1), declare_parameter("z.Kp", 1.0),
         declare_parameter("z.max_speed", 1.0));
+    controller_theta = ControllerCurrentInput(
+      declare_parameter("theta.dir", 1),
+      declare_parameter("theta.max_current", 3.0),
+      declare_parameter("theta.observer.K", 15.7),
+      declare_parameter("theta.observer.pole1", -20.0),
+      declare_parameter("theta.observer.pole2", -10.0)
+    );
 
     // motor_right = std::make_optional<ddt::Motor>();
   } else {
@@ -77,6 +95,10 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
   motor_sub_ = create_subscription<MotorStateVector>("motor/reference", qos,
                                                      motor_callback_);
   current_motor_pub_ = create_publisher<MotorStateVector>("motor/current", qos);
+}
+
+void MotorController::ShowWarning(const std::string& name) {
+  RCLCPP_WARN(this->get_logger(), "%s motor command failed", name.c_str());
 }
 
 void MotorController::MotorStateVectorReceiveCallback(
@@ -107,6 +129,7 @@ void MotorController::MotorStateVectorReceiveCallback(
     current_motor->velocity.theta = 0;
     current_motor->velocity.z = 0;
 
+    /* process of right and z motor */
     double right_velocity =
         controller_right->GetInput(velocity.right, angle.right);
     motor_right->SendVelocityCommand(right_velocity);
@@ -118,21 +141,38 @@ void MotorController::MotorStateVectorReceiveCallback(
     controller_right->Update(state_right);
     controller_z->Update(state_z);
 
+    /* process of left and theta motor */
     double left_velocity = controller_left->GetInput(velocity.left, angle.left);
     motor_left->SendVelocityCommand(left_velocity);
+    double theta_current = controller_theta->GetInput(velocity.theta, angle.theta);
+    motor_theta->SendCurrentCommand(theta_current);
     std::this_thread::sleep_for(5ms);
     auto state_left = motor_left->ReceiveSpinMotorFeedback();
+    auto state_theta = motor_theta->ReceiveSpinMotorFeedback();
     controller_left->Update(state_left);
+    controller_theta->Update(state_theta);
 
+    /* show warning message */
+    if(!state_left.has_value()) ShowWarning("left");
+    if(!state_right.has_value()) ShowWarning("right");
+    if(!state_z.has_value()) ShowWarning("z");
+    if(!state_theta.has_value()) ShowWarning("theta");
+
+    /* substitute current motor state */
     current_motor->angle.right =
         controller_right->angle * controller_right->dir;
     current_motor->velocity.right =
         controller_right->velocity * controller_right->dir;
+
     current_motor->angle.left = controller_left->angle * controller_left->dir;
     current_motor->velocity.left =
         controller_left->velocity * controller_left->dir;
+
     current_motor->angle.z = controller_z->angle * controller_z->dir;
     current_motor->velocity.z = controller_z->velocity * controller_z->dir;
+
+    current_motor->angle.theta = controller_theta->angle * controller_theta->dir;
+    current_motor->velocity.theta = controller_theta->velocity * controller_theta->dir;
   } else {
     current_motor->angle.left = angle.left;
     current_motor->angle.right = angle.right;

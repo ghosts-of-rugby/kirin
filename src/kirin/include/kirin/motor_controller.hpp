@@ -8,6 +8,7 @@
 #include "ddt-motor/angle_filter.hpp"
 #include "ddt-motor/motor.hpp"
 #include "ddt-motor/uart.hpp"
+#include "ddt-motor/observer.hpp"
 
 struct ControllerBase {
   ddt::AngleFilter filter;
@@ -26,7 +27,14 @@ struct ControllerVelocityInput : public ControllerBase {
   double GetInput(double ref_velocity, double ref_angle) override;
 };
 
-struct ControllerCurrentInput {};
+struct ControllerCurrentInput : public ControllerBase {
+  int dir = 1;
+  double max_current;
+  ddt::Observer observer;
+  ControllerCurrentInput(
+    int dir, double max_current, double obs_K, double obs_pole1, double obs_pole2);
+  double GetInput(double ref_velocity, double ref_angle) override;
+};
 
 class MotorController : public rclcpp::Node {
  public:
@@ -40,7 +48,9 @@ class MotorController : public rclcpp::Node {
   std::optional<ddt::Motor> motor_right, motor_left, motor_theta, motor_z;
   std::optional<ControllerVelocityInput> controller_right, controller_left,
       controller_z;
+  std::optional<ControllerCurrentInput> controller_theta;
 
+  void ShowWarning(const std::string& name);
   void MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg);
   std::function<void(const MotorStateVector::UniquePtr)> motor_callback_;
   rclcpp::Subscription<MotorStateVector>::SharedPtr motor_sub_;

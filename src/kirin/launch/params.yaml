@@ -55,8 +55,14 @@ motor_controller:
       max_speed: 5.0
     theta:
       id: 0x06
+      dir: 1
+      max_current: 3.0
       Kp_position: 5.0
       Kp_velocity: 5.0
+      observer:
+        K: 15.7
+        pole1: -20.0
+        pole2: -10.0
     z:
       id: 0x03
       dir: -1
