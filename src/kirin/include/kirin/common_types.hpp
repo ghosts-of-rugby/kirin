@@ -25,8 +25,22 @@ enum class BellowsName {
   ExRight
 };
 
+enum class MotorName {
+  Left  = 0,
+  Right = 1,
+  Z     = 2,
+  Theta = 3,
+};
+
+enum class JointName {
+  Theta = 0,
+  Z     = 1,
+  R     = 2,
+  Phi   = 3,
+};
+
 enum class AirState {
-  On = 1,
+  On  = 1,
   Off = 0
 };
 
@@ -37,11 +51,9 @@ enum class HandState {
 
 enum class MoveMode {
   Manual = 0,
-  Auto = 1,
-  Stop = 2
+  Auto   = 1,
+  Stop   = 2
 };
-
-
 
 }  // namespace kirin_types
 
