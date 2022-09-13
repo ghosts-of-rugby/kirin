@@ -3,7 +3,7 @@ import os
 from ament_index_python.packages import get_package_share_path
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import Command, LaunchConfiguration, ThisLaunchFileDir
 
@@ -22,6 +22,7 @@ def generate_launch_description():
   
   # create the launch configuration variables
   use_hardware = LaunchConfiguration('use_hardware')
+  record = LaunchConfiguration('record')
 
   # declare launch argument
   declare_use_hardware = DeclareLaunchArgument(
@@ -29,6 +30,19 @@ def generate_launch_description():
     default_value='true',
     description='Whether to connect hardware (motor and arduino)'
   )
+  declare_record = DeclareLaunchArgument(
+    'record',
+    default_value='true',
+    description='Whether to record bag'
+  )
+
+  bag_record = ExecuteProcess(
+    cmd=['ros2', 'bag', 'record', '-a'],
+    cwd=[os.path.expanduser('~'), '/ros2_ws/bag/'],
+    condition=IfCondition(record),
+    output='log',
+  )
+
 
   # robot_state_publisher
   robot_description = ParameterValue(Command(['xacro ', str(urdf_path)]), value_type=str)
@@ -89,6 +103,8 @@ def generate_launch_description():
 
   return LaunchDescription([
     declare_use_hardware,
+    declare_record,
+    bag_record,
     joy_node,
     kirin_main_executor,
     joint_state_publisher_node,
