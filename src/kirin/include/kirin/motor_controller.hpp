@@ -61,7 +61,7 @@ class MotorController : public rclcpp::Node {
       controller_z;
   std::optional<ControllerCurrentInput> controller_theta;
 
-  void ShowWarning(const std::string& name);
+  void ShowWarning(const std::array<bool, 4>& state_has_value_arr);
   void MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg);
   std::function<void(const MotorStateVector::UniquePtr)> motor_callback_;
   rclcpp::Subscription<MotorStateVector>::SharedPtr motor_sub_;

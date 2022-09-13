@@ -64,7 +64,7 @@ motor_controller:
         pole1: -20.0
         pole2: -10.0
     z:
-      id: 0x03
+      id: 0x09
       dir: -1
       Kp: 5.0
       max_speed: 10.0

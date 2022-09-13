@@ -100,6 +100,8 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
     motor_z = ddt::Motor(uart_theta_z, declare_parameter("z.id", 0x06));
     motor_theta = ddt::Motor(uart_theta_z, declare_parameter("theta.id", 0x03));
 
+    motor_theta->SetMode(ddt::Motor::DriveMode::Current);
+    
     controller_right = ControllerVelocityInput(
         declare_parameter("right.dir", 1), declare_parameter("right.Kp", 1.0),
         declare_parameter("right.max_speed", 1.0));
@@ -129,8 +131,18 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
   current_motor_pub_ = create_publisher<MotorStateVector>("motor/current", qos);
 }
 
-void MotorController::ShowWarning(const std::string& name) {
-  RCLCPP_WARN(this->get_logger(), "%s motor command failed", name.c_str());
+void MotorController::ShowWarning(const std::array<bool, 4>& state_has_value_arr) {
+  bool all_has_value = 
+    std::all_of(state_has_value_arr.begin(), state_has_value_arr.end(), [](bool has_value) { return has_value; });
+  if(all_has_value) return;
+  else {
+    RCLCPP_WARN(
+      this->get_logger(), "motor command status: left [%s], right [%s], z [%s], theta[%s]",
+      state_has_value_arr.at(0) ? "  OK!  " : "Failure", 
+      state_has_value_arr.at(1) ? "  OK!  " : "Failure", 
+      state_has_value_arr.at(2) ? "  OK!  " : "Failure", 
+      state_has_value_arr.at(3) ? "  OK!  " : "Failure");
+  }
 }
 
 void MotorController::MotorStateVectorReceiveCallback(
@@ -167,7 +179,7 @@ void MotorController::MotorStateVectorReceiveCallback(
     motor_right->SendVelocityCommand(right_velocity);
     double z_velocity = controller_z->GetInput(velocity.z, angle.z);
     motor_z->SendVelocityCommand(z_velocity);
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(8ms);
     auto state_right = motor_right->ReceiveSpinMotorFeedback();
     auto state_z = motor_z->ReceiveSpinMotorFeedback();
     controller_right->Update(state_right);
@@ -179,17 +191,16 @@ void MotorController::MotorStateVectorReceiveCallback(
     double theta_current =
         controller_theta->GetInput(velocity.theta, angle.theta);
     motor_theta->SendCurrentCommand(theta_current);
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(8ms);
     auto state_left = motor_left->ReceiveSpinMotorFeedback();
     auto state_theta = motor_theta->ReceiveSpinMotorFeedback();
     controller_left->Update(state_left);
     controller_theta->Update(state_theta);
 
     /* show warning message */
-    if (!state_left.has_value()) ShowWarning("left");
-    if (!state_right.has_value()) ShowWarning("right");
-    if (!state_z.has_value()) ShowWarning("z");
-    if (!state_theta.has_value()) ShowWarning("theta");
+    std::array<bool, 4> state_has_value_arr = 
+      {state_left.has_value(), state_right.has_value(), state_z.has_value(), state_theta.has_value()}; 
+    ShowWarning(state_has_value_arr);
 
     /* substitute current motor state */
     current_motor->angle.right =
@@ -225,7 +236,7 @@ void MotorController::MotorStateVectorReceiveCallback(
   /* end */
   auto run_time = this->get_clock()->now() - start;
   auto run_us = run_time.to_chrono<std::chrono::microseconds>();
-  if (run_us > 11000us) {
+  if (run_us > 17000us) {
     RCLCPP_WARN(this->get_logger(), "motor communication run time: %4d [us]",
                 run_us.count());
   }
