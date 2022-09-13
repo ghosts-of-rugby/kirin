@@ -30,9 +30,13 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
                             .z   = declare_parameter("velocity_ratio.adjust.z", 0.0),
                             .psi = declare_parameter("velocity_ratio.adjust.psi", 0.0)};
 
-  z_auto_ = {.ratio           = declare_parameter("z_auto.ratio", 2.0),
-             .max_speed       = declare_parameter("z_auto.max_speed", 0.3),
-             .approach_offset = declare_parameter("z_auto.approach_offset", 0.05)};
+  z_auto_      = {.ratio           = declare_parameter("z_auto.ratio", 2.0),
+                  .max_speed       = declare_parameter("z_auto.max_speed", 0.3),
+                  .approach_offset = declare_parameter("z_auto.approach_offset", 0.05)};
+  planar_auto_ = {.xy_ratio      = declare_parameter("xy_auto.ratio", 2.0),
+                  .xy_max_speed  = declare_parameter("xy_auto.max_speed", 0.3),
+                  .psi_ratio     = declare_parameter("psi_auto.ratio", 2.0),
+                  .psi_max_speed = declare_parameter("psi_auto.max_speed", 0.3)};
 
   // transform listener
   tf_buffer_          = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -61,6 +65,11 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     RCLCPP_INFO(this->get_logger(), "Z auto movement start");
   });
 
+  this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
+    planar_auto_.enabled = true;
+    RCLCPP_INFO(this->get_logger(), "planar auto movement start");
+  });
+
   // this->RegisterButtonPressedCallback(
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
 
@@ -82,18 +91,22 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 WorldCoordManualController::~WorldCoordManualController() {}
 
 geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
+  /* input manual velocity */
   geometry_msgs::msg::Pose pose;
   auto velocity_ratio
       = (z_auto_.state == ZAutoState::Approach) ? velocity_ratio_adjust_ : velocity_ratio_normal_;
   vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.x,
                          this->GetAxis(JoyController::Axis::LStickY) * 1.0 * velocity_ratio.y,
                          this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
+  double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
+  double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
+  dpsi_             = (left_trig - right_trig) * velocity_ratio.psi;
 
   /* if z auto movement, overwrite z velocity */
   if (z_auto_.enabled) {
     std::string target;
     double offset;
-    if(z_auto_.state == ZAutoState::Approach) {
+    if (z_auto_.state == ZAutoState::Approach) {
       target = frame::pick::k1st;
       offset = z_auto_.approach_offset;
     } else {
@@ -111,12 +124,31 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
       }
     }
   }
+
+  /* if planar auto movement, overwrite x y psi velocity */
+  if (planar_auto_.enabled) {
+    std::string target     = frame::kDepart;
+    auto planar_auto_input = GenerateAutoPlaneVelocity(target);
+    if (planar_auto_input.has_value()) {
+      auto [plane_vel, plane_distance] = planar_auto_input.value();
+      auto [xy_vel, psi_vel]           = plane_vel;
+      auto [xy_distance, psi_distance] = plane_distance;
+      RCLCPP_INFO(this->get_logger(),
+                  "x y psi auto input: [ %f, %f, %f ], x y psi distance: [ %f, %f, %f ]",
+                  xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(), psi_distance);
+      vel_.x() = xy_vel.x();
+      vel_.y() = xy_vel.y();
+      dpsi_    = psi_vel;
+      if (xy_distance.norm() <= 0.005 && std::abs(psi_distance) <= 0.03) {
+        planar_auto_.enabled = false;
+        RCLCPP_INFO(this->get_logger(), "planar auto movement finished!");
+      }
+    }
+  }
+
   pos_ += vel_ * loop_ms_ * 0.001;
   pose.position = Eigen::toMsg(pos_);
 
-  double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
-  double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  dpsi_             = (left_trig - right_trig) * velocity_ratio.psi;
   psi_ += dpsi_ * loop_ms_ * 0.001;
   Eigen::Quaterniond quat(Eigen::AngleAxisd(psi_, Eigen::Vector3d::UnitZ()));
   pose.orientation = Eigen::toMsg(quat);
@@ -315,11 +347,44 @@ std::optional<std::tuple<double, double>> WorldCoordManualController::GenerateAu
     const std::string& target, double offset) {
   auto pose = GetPoseFromTf(current_bellows_frame_, target);
   if (pose.has_value()) {
-    double RATIO       = 5.0;
-    double MAX_SPEED   = 0.3;
     double z_distance  = pose.value().position.z;
     double input_z_vel = z_auto_.ratio * (z_distance - sgn(z_distance) * offset);
     return std::tie(std::clamp(input_z_vel, -z_auto_.max_speed, z_auto_.max_speed), z_distance);
+  } else {
+    return std::nullopt;
+  }
+}
+
+using PlaneTuple = WorldCoordManualController::PlaneTuple;
+std::optional<std::tuple<PlaneTuple, PlaneTuple>>
+WorldCoordManualController::GenerateAutoPlaneVelocity(const std::string& target) {
+  // bellowsから見たtargetの距離を計算
+  auto distance         = GetPoseFromTf(current_bellows_frame_, target);
+  // コントローラーの速度入力はロボット座標系でのxyなので入力の回転変換用のPoseを取得
+  auto bellows_in_robot = GetPoseFromTf(frame::kFixBase, current_bellows_frame_);
+  if (distance.has_value() && bellows_in_robot.has_value()) {
+    Eigen::Vector2d xy_distance;
+    {
+      auto&& xy_distance_in_bellows
+          = Eigen::Vector2d(distance.value().position.x, distance.value().position.y);
+      auto [r_tmp, p_tmp, yaw_bellows_in_robot]
+          = CalcGeometryQuatToRPY(bellows_in_robot.value().orientation);
+      Eigen::Rotation2Dd rot(yaw_bellows_in_robot);
+      xy_distance = rot.matrix() * xy_distance_in_bellows;
+    }
+
+    auto [roll, pitch, psi_distance] = CalcGeometryQuatToRPY(distance.value().orientation);
+
+    auto&& input_xy_vel   = planar_auto_.xy_ratio * xy_distance;
+    double input_psi_vel  = planar_auto_.psi_ratio * psi_distance;
+    auto&& clamped_xy_vel = Eigen::Vector2d(
+        std::clamp(input_xy_vel.x(), -planar_auto_.xy_max_speed, planar_auto_.xy_max_speed),
+        std::clamp(input_xy_vel.y(), -planar_auto_.xy_max_speed, planar_auto_.xy_max_speed));
+    double clamped_psi_vel
+        = std::clamp(input_psi_vel, -planar_auto_.psi_max_speed, planar_auto_.psi_max_speed);
+    PlaneTuple vel_tuple      = std::tie(clamped_xy_vel, clamped_psi_vel);
+    PlaneTuple distance_tuple = std::tie(xy_distance, psi_distance);
+    return std::tie(vel_tuple, distance_tuple);
   } else {
     return std::nullopt;
   }

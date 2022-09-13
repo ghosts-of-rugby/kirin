@@ -25,23 +25,35 @@ int sgn(T val) {
 
 class WorldCoordManualController : public JoyController {
  public:
+  using PlaneTuple = std::tuple<Eigen::Vector2d, double>;
   struct VelocityRatio {
     double x;
     double y;
     double z;
     double psi;
   };
+
   enum class ZAutoState {
     Approach,
     Depart
   };
+
   struct ZAuto {
-    bool enabled = false;
+    bool enabled     = false;
     ZAutoState state = ZAutoState::Depart;
     double ratio;
     double max_speed;
     double approach_offset;
   };
+
+  struct PlanarAuto {
+    bool enabled = false;
+    double xy_ratio;
+    double xy_max_speed;
+    double psi_ratio;
+    double psi_max_speed;
+  };
+
   explicit WorldCoordManualController(const std::string& node_name,
                                       const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   ~WorldCoordManualController();
@@ -59,6 +71,7 @@ class WorldCoordManualController : public JoyController {
   VelocityRatio velocity_ratio_normal_;
   VelocityRatio velocity_ratio_adjust_;
   ZAuto z_auto_;
+  PlanarAuto planar_auto_;
   bool is_air_on{false};
 
   kirin_types::HandState current_state_;
@@ -74,6 +87,8 @@ class WorldCoordManualController : public JoyController {
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
 
+  void DeclareNodeParameters();
+
   inline geometry_msgs::msg::Pose GetManualPose();
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                                const std::string& child_frame);
@@ -88,6 +103,8 @@ class WorldCoordManualController : public JoyController {
 
   std::optional<std::tuple<double, double>> GenerateAutoZVelocity(const std::string& target,
                                                                   double offset);
+  std::optional<std::tuple<PlaneTuple, PlaneTuple>> GenerateAutoPlaneVelocity(
+      const std::string& target);
 
   void PublishBellowsMsg(const std::string& bellows);
   void PublishModeMsg(const kirin_types::MoveMode& mode);
