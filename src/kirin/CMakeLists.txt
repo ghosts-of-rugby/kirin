@@ -23,8 +23,8 @@ file(GLOB src_files src/*.cpp)
 file(GLOB gencode_files gencode/*.cpp)
 
 # ビルド設定の便利関数
-function(custom_executable target)
-  add_executable(${target} main/${target}.cpp ${src_files} ${gencode_files})
+function(custom_executable target dir)
+  add_executable(${target} ${dir}/${target}.cpp ${src_files} ${gencode_files})
   ament_target_dependencies(${target} 
     "rclcpp"
     "tf2"
@@ -44,18 +44,18 @@ function(custom_executable target)
   )
 endfunction()
 
-custom_executable(kirin_main_executor)
-custom_executable(jagariko_marker_publisher)
-custom_executable(jsk_visualize_node)
-custom_executable(test_motor_controller)
-custom_executable(test_hand_tool_manager)
+custom_executable(kirin_main_executor       main)
+custom_executable(jagariko_marker_publisher main)
+custom_executable(jsk_visualize_node        main)
+custom_executable(test_motor_controller     main/test)
+custom_executable(test_hand_tool_manager    main/test)
 
 include_directories(
   include
   gencode
   /usr/local/MATLAB/R2020a/extern/include
   ${Eigen3_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}/../../lib/magic_enum/include
+  ${CMAKE_SOURCE_DIR}/lib/magic_enum/include
 )
 
 
