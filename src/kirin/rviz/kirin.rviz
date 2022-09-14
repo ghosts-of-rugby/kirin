@@ -74,6 +74,18 @@ Visualization Manager:
           Value: true
         pick_share:
           Value: true
+        place_our_1:
+          Value: true
+        place_our_2:
+          Value: true
+        place_our_3:
+          Value: true
+        place_our_4:
+          Value: true
+        place_our_5:
+          Value: true
+        place_share:
+          Value: true
         r_link:
           Value: true
         theta_link:
@@ -82,7 +94,7 @@ Visualization Manager:
           Value: true
       Marker Scale: 0.30000001192092896
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: false
       Tree:
@@ -113,6 +125,18 @@ Visualization Manager:
           pick_our_5:
             {}
           pick_share:
+            {}
+          place_our_1:
+            {}
+          place_our_2:
+            {}
+          place_our_3:
+            {}
+          place_our_4:
+            {}
+          place_our_5:
+            {}
+          place_share:
             {}
       Update Interval: 0
       Value: true
@@ -654,25 +678,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.7486999034881592
+      Distance: 1.790809988975525
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.7285531163215637
-        Y: 0.0047844573855400085
-        Z: -0.022154802456498146
+        X: -0.8127841949462891
+        Y: 0.18609404563903809
+        Z: -0.05468476191163063
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9697973728179932
+      Pitch: 0.8847973346710205
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.127281904220581
+      Yaw: 3.13228178024292
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 2.67037034034729

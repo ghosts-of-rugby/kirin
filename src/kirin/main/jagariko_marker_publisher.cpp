@@ -19,6 +19,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
 
   static constexpr size_t OUR_JAGARIKO_NUM   = 16;
   static constexpr size_t SHARE_JAGARIKO_NUM = 9;
+  static constexpr size_t PLACE_POSE_NUM     = 6;
   static constexpr size_t JAGARIKO_NUM       = OUR_JAGARIKO_NUM + SHARE_JAGARIKO_NUM;
   static constexpr size_t BLOCK_NUM          = (OUR_JAGARIKO_NUM - 1) / 3;
 
@@ -45,20 +46,37 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       share_jaga_poses_.at(l) = {share_top_x, share_top_y - l * share_distance};
     }
 
+    /* calculate place position */
+    // base is place point of rapid hand
+    {
+      double base_x          = -1.0 * 0.874;  // if red
+      double base_y          = 0.65;
+      double x_distance      = 0.1;
+      double jagariko_height = 0.08;
+      for (int l = 0; l < PLACE_POSE_NUM - 1; l++) {
+        double yaw         = (l % 2 == 1) ? 0.0 : -M_PI;
+        place_poses_.at(l) = {base_x + x_distance * (l+1) * -1.0, base_y, 0.0, yaw};  // if red
+      }
+      place_poses_.at(PLACE_POSE_NUM - 1)
+          = {base_x + x_distance * 3 * -1.0, base_y, jagariko_height, 0.0}; // if red
+    }
+
     /* create pick target transform */
     // out field pick target
-    std::vector<std::tuple<int, std::string>> target = {
-        {3,  frame::pick::k1st},
-        {6,  frame::pick::k2nd},
-        {9,  frame::pick::k3rd},
-        {12, frame::pick::k4th},
-        {15, frame::pick::k5th}
-    };
-    for (const auto& [idx, frame] : target) {
-      auto [x, y] = jaga_poses_.at(idx);
-      double z    = 0.08;
-      double yaw  = -M_PI_2;  // parent_frame: field(base_link)
-      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, frame));
+    {
+      std::vector<std::tuple<int, std::string>> target = {
+          {3,  frame::pick::k1st},
+          {6,  frame::pick::k2nd},
+          {9,  frame::pick::k3rd},
+          {12, frame::pick::k4th},
+          {15, frame::pick::k5th}
+      };
+      for (const auto& [idx, frame] : target) {
+        auto [x, y] = jaga_poses_.at(idx);
+        double z    = 0.08;
+        double yaw  = -M_PI_2;  // parent_frame: field(base_link)
+        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame));
+      }
     }
     // share field target
     {
@@ -66,7 +84,24 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       double share_z = 0.035;
       double z       = 0.08 + share_z;
       double yaw     = 0.0;
-      transform_vec_.push_back(CreateJagarikoTransform(x, y, z, yaw, frame::pick::kShare));
+      transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame::pick::kShare));
+    }
+    // place target
+    {
+      std::vector<std::tuple<int, std::string>> target = {
+          {0, frame::place::kShare},
+          {1, frame::place::k1st},
+          {2, frame::place::k2nd},
+          {3, frame::place::k3rd},
+          {4, frame::place::k4th},
+          {5, frame::place::k5th},
+      };
+      for (const auto& [idx, frame] : target) {
+        auto [x, y, offset, yaw] = place_poses_.at(idx);
+        double z = 0.08 + offset;
+        RCLCPP_INFO(this->get_logger(), "%s: %f, %f, %f, %f", frame.c_str(), x, y, offset, yaw);
+        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame));
+      }
     }
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -81,7 +116,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   }
 
  private:
-  geometry_msgs::msg::TransformStamped CreateJagarikoTransform(
+  geometry_msgs::msg::TransformStamped CreateTargetTransform(
       double x, double y, double z, double yaw, const std::string& frame_name) {
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp    = this->get_clock()->now();
@@ -97,7 +132,8 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   }
 
   void PublishTransform() {
-    for (auto& t : transform_vec_) t.header.stamp = this->get_clock()->now();
+    auto now = this->get_clock()->now();
+    for (auto& t : transform_vec_) t.header.stamp = now;
     tf_broadcaster_->sendTransform(transform_vec_);
   }
 
@@ -151,6 +187,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
 
   std::array<std::tuple<double, double>, OUR_JAGARIKO_NUM> jaga_poses_;
   std::array<std::tuple<double, double>, SHARE_JAGARIKO_NUM> share_jaga_poses_;
+  std::array<std::tuple<double, double, double, double>, PLACE_POSE_NUM> place_poses_;
   std::vector<geometry_msgs::msg::TransformStamped> transform_vec_;
 
   rclcpp::Publisher<MarkerArray>::SharedPtr marker_pub_;
