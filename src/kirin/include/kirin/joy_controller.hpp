@@ -48,6 +48,7 @@ class JoyController : public rclcpp::Node {
   virtual ~JoyController();
   float GetAxis(const Axis& axis) const;
   ButtonState GetButtonState(const Button& button) const;
+  void RegisterAxisChangedCallback(const Axis& axis, std::function<void(double, double)> callback);
   void RegisterButtonPressedCallback(const Button& button, std::function<void()> callback);
 
  private:
@@ -56,6 +57,7 @@ class JoyController : public rclcpp::Node {
   std::function<void(const sensor_msgs::msg::Joy::UniquePtr)> joy_callback_;
   std::array<float, magic_enum::enum_count<Axis>()> axes_;
   std::array<ButtonState, magic_enum::enum_count<Button>()> buttons_;
+  std::array<std::function<void(double, double)>, magic_enum::enum_count<Axis>()> changed_callback_;
   std::array<std::function<void()>, magic_enum::enum_count<Button>()> pressed_callback_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr sub_;
 };

@@ -17,7 +17,11 @@ JoyController::~JoyController() {}
 
 void JoyController::JoyTopicCallback(const sensor_msgs::msg::Joy::UniquePtr msg) {
   for (int i = 0; i < magic_enum::enum_count<Axis>(); i++) {
-    axes_.at(i) = msg->axes.at(i);
+    auto new_value = msg->axes.at(i);
+    if (axes_.at(i) != new_value) {
+      if (changed_callback_.at(i)) changed_callback_.at(i)(axes_.at(i), new_value);
+    }
+    axes_.at(i) = new_value;
   }
   for (int i = 0; i < magic_enum::enum_count<Button>(); i++) {
     auto new_state = magic_enum::enum_cast<ButtonState>(msg->buttons.at(i)).value();
@@ -38,6 +42,11 @@ float JoyController::GetAxis(const JoyController::Axis& axis) const {
 JoyController::ButtonState JoyController::GetButtonState(
     const JoyController::Button& button) const {
   return buttons_.at(magic_enum::enum_integer(button));
+}
+
+void JoyController::RegisterAxisChangedCallback(const JoyController::Axis& axis,
+                                                std::function<void(double, double)> callback) {
+  changed_callback_.at(magic_enum::enum_integer(axis)) = callback;
 }
 
 void JoyController::RegisterButtonPressedCallback(const JoyController::Button& button,
