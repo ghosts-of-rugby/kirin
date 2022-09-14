@@ -15,6 +15,7 @@
 #include <kirin_msgs/srv/set_air_state.hpp>
 #include "kirin/joy_controller.hpp"
 #include "kirin/common_types.hpp"
+#include "kirin/frame.hpp"
 
 using RPYTuple = std::tuple<double, double, double>;
 
@@ -74,6 +75,14 @@ class WorldCoordManualController : public JoyController {
   PlanarAuto planar_auto_;
   bool is_air_on{false};
 
+  int pick_index{0};
+  const int pick_max_index{frame::pick::kNum - 1};
+  int place_index{0};
+  const int place_max_index{frame::place::kNum - 1};
+  std::array<std::string, frame::pick::kNum> pick_target_;
+  std::array<std::string, frame::place::kNum> place_target_;
+  std::string next_target_{frame::kDepart};
+
   kirin_types::HandState current_state_;
   kirin_types::MoveMode move_mode_;
 
@@ -84,10 +93,8 @@ class WorldCoordManualController : public JoyController {
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
-  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
-
-  void DeclareNodeParameters();
 
   inline geometry_msgs::msg::Pose GetManualPose();
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,

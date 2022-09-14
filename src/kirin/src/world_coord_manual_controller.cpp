@@ -40,7 +40,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
                   .psi_max_speed = declare_parameter("psi_auto.max_speed", 0.3)};
 
   // transform listener
-  tf_buffer_          = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+  tf_buffer_          = std::make_shared<tf2_ros::Buffer>(this->get_clock());
   transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   {
@@ -49,6 +49,13 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     std::this_thread::sleep_for(300ms);
   }
 
+  /* define target arrary */
+  pick_target_  = {frame::pick::kShare, frame::pick::k1st, frame::pick::k2nd,
+                   frame::pick::k3rd,   frame::pick::k4th, frame::pick::k5th};
+  place_target_ = {frame::place::kShare, frame::place::k1st, frame::place::k2nd,
+                   frame::place::k3rd,   frame::place::k4th, frame::place::k5th};
+
+  /* register callback when some actions occur */
   this->RegisterButtonPressedCallback(
       Button::A, std::bind(&WorldCoordManualController::ChangeHandStateClientRequest, this));
 
@@ -69,6 +76,28 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
     planar_auto_.enabled = true;
     RCLCPP_INFO(this->get_logger(), "planar auto movement start");
+  });
+
+  this->RegisterAxisChangedCallback(Axis::CrossX, [this](double pre, double new_value) -> void {
+    /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
+    if (std::abs(new_value) != 1.0 || planar_auto_.enabled) return;
+    int input = new_value * -1;
+    place_index += input;
+    place_index  = std::clamp(place_index, 0, place_max_index);
+    next_target_ = place_target_.at(place_index);
+    RCLCPP_INFO(this->get_logger(), "curent place index: %d, target name: %s", place_index,
+                next_target_.c_str());
+  });
+
+  this->RegisterAxisChangedCallback(Axis::CrossY, [this](double pre, double new_value) -> void {
+    /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
+    if (std::abs(new_value) != 1.0 || planar_auto_.enabled) return;
+    int input = new_value * -1;
+    pick_index += input;
+    pick_index   = std::clamp(pick_index, 0, pick_max_index);
+    next_target_ = pick_target_.at(pick_index);
+    RCLCPP_INFO(this->get_logger(), "curent pick index: %d, target name: %s", pick_index,
+                next_target_.c_str());
   });
 
   // this->RegisterButtonPressedCallback(
@@ -128,8 +157,7 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
 
   /* if planar auto movement, overwrite x y psi velocity */
   if (planar_auto_.enabled) {
-    std::string target     = frame::kDepart;
-    auto planar_auto_input = GenerateAutoPlaneVelocity(target);
+    auto planar_auto_input = GenerateAutoPlaneVelocity(next_target_);
     if (planar_auto_input.has_value()) {
       auto [plane_vel, plane_distance] = planar_auto_input.value();
       auto [xy_vel, psi_vel]           = plane_vel;
