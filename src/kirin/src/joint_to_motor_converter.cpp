@@ -10,8 +10,8 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
   double R_phi = machine::kPhiRadius;
 
   // clang-format off
-  mat_motor_to_joint_ << 1./2.*R_m,  1./2.*R_m,
-                         R_m/R_phi, -R_m/R_phi;
+  mat_motor_to_joint_ << 1./2.*R_m,       1./2.*R_m,
+                         1./2.*R_m/R_phi, 1./2.*-R_m/R_phi;
   // clang-format on
 
   /* initial joint value when setting */
