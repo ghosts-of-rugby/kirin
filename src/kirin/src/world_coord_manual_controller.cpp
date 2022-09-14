@@ -70,17 +70,27 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     auto next_state
         = (z_auto_.state == ZAutoState::Approach) ? ZAutoState::Depart : ZAutoState::Approach;
     z_auto_.state = next_state;
+    if(!planar_auto_.enabled) {
+      // movement from pick to place or from place to pick is invalid
+      ValidateAndUpdateTarget();
+      current_target_ = next_target_;
+    }
     RCLCPP_INFO(this->get_logger(), "Z auto movement start");
   });
 
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
-    planar_auto_.enabled = true;
-    RCLCPP_INFO(this->get_logger(), "planar auto movement start");
+    if (!planar_auto_.enabled) {
+      // movement from pick to place or from place to pick is invalid
+      ValidateAndUpdateTarget();
+      current_target_      = next_target_;
+      planar_auto_.enabled = true;
+      RCLCPP_INFO(this->get_logger(), "planar auto movement start");
+    }
   });
 
   this->RegisterAxisChangedCallback(Axis::CrossX, [this](double pre, double new_value) -> void {
     /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
-    if (std::abs(new_value) != 1.0 || planar_auto_.enabled) return;
+    if (std::abs(new_value) != 1.0) return;
     int input = new_value * -1;
     place_index += input;
     place_index  = std::clamp(place_index, 0, place_max_index);
@@ -92,7 +102,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterAxisChangedCallback(Axis::CrossY, [this](double pre, double new_value) -> void {
     /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
-    if (std::abs(new_value) != 1.0 || planar_auto_.enabled) return;
+    if (std::abs(new_value) != 1.0) return;
     int input = new_value * -1;
     pick_index += input;
     pick_index   = std::clamp(pick_index, 0, pick_max_index);
@@ -140,8 +150,8 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   if (z_auto_.enabled) {
     std::string target;
     double offset;
-    if (z_auto_.state == ZAutoState::Approach && next_target_ != frame::kDepart) {
-      target = next_target_;
+    if (z_auto_.state == ZAutoState::Approach && current_target_ != frame::kDepart) {
+      target = current_target_;
       offset = z_auto_.approach_offset;
     } else {
       target = frame::kDepart;
@@ -161,7 +171,7 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
 
   /* if planar auto movement, overwrite x y psi velocity */
   if (planar_auto_.enabled) {
-    auto planar_auto_input = GenerateAutoPlaneVelocity(next_target_);
+    auto planar_auto_input = GenerateAutoPlaneVelocity(current_target_);
     if (planar_auto_input.has_value()) {
       auto [plane_vel, plane_distance] = planar_auto_input.value();
       auto [xy_vel, psi_vel]           = plane_vel;
@@ -413,5 +423,21 @@ WorldCoordManualController::GenerateAutoPlaneVelocity(const std::string& target)
     return std::tie(vel_tuple, distance_tuple);
   } else {
     return std::nullopt;
+  }
+}
+
+void WorldCoordManualController::ValidateAndUpdateTarget() {
+  if ((kirin_utils::Contain(current_target_, "pick")
+       && kirin_utils::Contain(next_target_, "place"))) {
+    next_target_ = frame::kDepart;
+    RCLCPP_ERROR(this->get_logger(),
+                 "move from pick to place directly is invalid! Go through depart position!");
+    PublishNextTargetMsg(next_target_);
+  } else if (kirin_utils::Contain(current_target_, "place")
+             && kirin_utils::Contain(next_target_, "pick")) {
+    next_target_ = frame::kDepart;
+    RCLCPP_ERROR(this->get_logger(),
+                 "move from place to pick directly is invalid! Go through depart position!");
+    PublishNextTargetMsg(next_target_);
   }
 }

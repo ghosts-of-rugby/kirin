@@ -82,6 +82,7 @@ class WorldCoordManualController : public JoyController {
   std::array<std::string, frame::pick::kNum+1> pick_target_;
   std::array<std::string, frame::place::kNum+1> place_target_;
   std::string next_target_{frame::kDepart};
+  std::string current_target_{frame::kDepart};
 
   kirin_types::HandState current_state_;
   kirin_types::MoveMode move_mode_;
@@ -112,6 +113,7 @@ class WorldCoordManualController : public JoyController {
                                                                   double offset);
   std::optional<std::tuple<PlaneTuple, PlaneTuple>> GenerateAutoPlaneVelocity(
       const std::string& target);
+  void ValidateAndUpdateTarget();
 
   void PublishBellowsMsg(const std::string& bellows);
   void PublishModeMsg(const kirin_types::MoveMode& mode);

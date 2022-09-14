@@ -15,6 +15,11 @@ std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const rclcpp::Logger& node
                                                       const std::string& parent_name,
                                                       const std::string& child_name);
 
+template<class T, class U>
+bool Contain(const std::basic_string<T>& str, const U& v) {
+  return str.find(v) != std::basic_string<T>::npos;
+}
+
 }
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_UTILS */
