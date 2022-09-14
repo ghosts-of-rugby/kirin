@@ -76,11 +76,11 @@ class WorldCoordManualController : public JoyController {
   bool is_air_on{false};
 
   int pick_index{0};
-  const int pick_max_index{frame::pick::kNum - 1};
+  const int pick_max_index{frame::pick::kNum};
   int place_index{0};
-  const int place_max_index{frame::place::kNum - 1};
-  std::array<std::string, frame::pick::kNum> pick_target_;
-  std::array<std::string, frame::place::kNum> place_target_;
+  const int place_max_index{frame::place::kNum};
+  std::array<std::string, frame::pick::kNum+1> pick_target_;
+  std::array<std::string, frame::place::kNum+1> place_target_;
   std::string next_target_{frame::kDepart};
 
   kirin_types::HandState current_state_;
@@ -88,7 +88,7 @@ class WorldCoordManualController : public JoyController {
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_, next_target_pub_;
   rclcpp::Publisher<kirin_msgs::msg::MoveMode>::SharedPtr move_mode_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
@@ -115,6 +115,7 @@ class WorldCoordManualController : public JoyController {
 
   void PublishBellowsMsg(const std::string& bellows);
   void PublishModeMsg(const kirin_types::MoveMode& mode);
+  void PublishNextTargetMsg(const std::string& next_target);
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */

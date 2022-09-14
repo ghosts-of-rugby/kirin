@@ -3,11 +3,16 @@
 #include <string>
 #include <time.h>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include <kirin_msgs/msg/motor_state_vector.hpp>
 #include "kirin/common_types.hpp"
+#include "kirin/utils.hpp"
+#include "kirin/frame.hpp"
 
 class JskVisualizeNode : public rclcpp::Node {
  public:
@@ -17,18 +22,25 @@ class JskVisualizeNode : public rclcpp::Node {
     using namespace std::chrono_literals;  // NOLINT
     rclcpp::QoS qos(rclcpp::KeepLast(10));
 
+    // transform listener
+    tf_buffer_          = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
     /* define subscription */
     joint_sub_ = create_subscription<sensor_msgs::msg::JointState>(
         "joint_states", qos,
         std::bind(&JskVisualizeNode::JointCallback, this, std::placeholders::_1));
+    next_target_sub_ = create_subscription<std_msgs::msg::String>(
+        "next_target", qos,
+        std::bind(&JskVisualizeNode::NextTargetCallback, this, std::placeholders::_1));
     ref_motor_callback_
         = std::bind(&JskVisualizeNode::MotorCallback, this, "reference", std::placeholders::_1);
     cur_motor_callback_
         = std::bind(&JskVisualizeNode::MotorCallback, this, "current", std::placeholders::_1);
-    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/stete/reference", qos,
-                                                                            ref_motor_callback_);
-    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/state/current", qos,
-                                                                            cur_motor_callback_);
+    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>(
+        "motor/stete/reference", qos, ref_motor_callback_);
+    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>(
+        "motor/state/current", qos, cur_motor_callback_);
 
     /* show joint state */
     {
@@ -62,6 +74,12 @@ class JskVisualizeNode : public rclcpp::Node {
 
     /* show date */
     date_string_pub_ = create_publisher<std_msgs::msg::String>("rviz/date", qos);
+
+    /* show next target */
+    next_target_string_pub_
+        = create_publisher<std_msgs::msg::String>("rviz/next_target/string", qos);
+    next_target_pose_pub_
+        = create_publisher<geometry_msgs::msg::PoseStamped>("rviz/next_target/pose", qos);
 
     /* regularly update */
     timer_ = create_wall_timer(100ms, timer_callback_);
@@ -132,17 +150,35 @@ class JskVisualizeNode : public rclcpp::Node {
     motor_pub.at(Motor::Z)->publish(std::move(z_msg));
   }
 
-  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> ref_motor_callback_;
-  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> cur_motor_callback_;
+  void NextTargetCallback(const std_msgs::msg::String::UniquePtr msg) {
+    std_msgs::msg::String show_msg;
+    show_msg.data = "[Next Target Frame]: " + msg->data;
+    next_target_string_pub_->publish(std::move(show_msg));
+
+    auto next_target_pose = kirin_utils::GetPoseFromTf(this->get_logger(), this->tf_buffer_,
+                                                       frame::kBaseLink, msg->data);
+    if (next_target_pose.has_value()) {
+      auto pose_msg             = std::make_unique<geometry_msgs::msg::PoseStamped>();
+      pose_msg->header.frame_id = frame::kBaseLink;
+      pose_msg->header.stamp    = this->get_clock()->now();
+      pose_msg->pose            = next_target_pose.value();
+      next_target_pose_pub_->publish(std::move(pose_msg));
+    }
+  }
+
+  std::function<void(const kirin_msgs::msg::MotorStateVector::UniquePtr)> ref_motor_callback_,
+      cur_motor_callback_;
   std::function<void()> timer_callback_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_sub_;
-  rclcpp::Subscription<kirin_msgs::msg::MotorStateVector>::SharedPtr ref_motor_sub_;
-  rclcpp::Subscription<kirin_msgs::msg::MotorStateVector>::SharedPtr cur_motor_sub_;
+  rclcpp::Subscription<kirin_msgs::msg::MotorStateVector>::SharedPtr ref_motor_sub_, cur_motor_sub_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr next_target_sub_;
   using F32Publisher = rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr;
   std::unordered_map<kirin_types::JointName, F32Publisher> ref_joint_pub_;
-  std::unordered_map<kirin_types::MotorName, F32Publisher> ref_motor_pub_;
-  std::unordered_map<kirin_types::MotorName, F32Publisher> cur_motor_pub_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr date_string_pub_;
+  std::unordered_map<kirin_types::MotorName, F32Publisher> ref_motor_pub_, cur_motor_pub_;
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr date_string_pub_, next_target_string_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr next_target_pose_pub_;
+  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
 };
 

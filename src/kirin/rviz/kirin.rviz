@@ -218,6 +218,21 @@ Visualization Manager:
       Displays:
         - Class: jsk_rviz_plugin/TargetVisualizer
           Enabled: true
+          Name: NextTargetVisualizer
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /rviz/next_target/pose
+          Value: true
+          alpha: 0.800000011920929
+          color: 25; 255; 240
+          radius: 0.10000000149011612
+          target name: next target
+          type: Decoreted Circle
+        - Class: jsk_rviz_plugin/TargetVisualizer
+          Enabled: false
           Name: TargetVisualizer
           Topic:
             Depth: 5
@@ -225,7 +240,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /world_coord_pose
-          Value: true
+          Value: false
           alpha: 0.800000011920929
           color: 25; 255; 240
           radius: 0.029999999329447746
@@ -639,25 +654,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.3372297286987305
+      Distance: 1.7486999034881592
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.5073259472846985
-        Y: -0.022592369467020035
-        Z: 0.009475705213844776
+        X: -0.7285531163215637
+        Y: 0.0047844573855400085
+        Z: -0.022154802456498146
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7247971296310425
+      Pitch: 0.9697973728179932
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.697302341461182
+      Yaw: 3.127281904220581
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 2.67037034034729

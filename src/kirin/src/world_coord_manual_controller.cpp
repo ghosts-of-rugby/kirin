@@ -50,10 +50,10 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   }
 
   /* define target arrary */
-  pick_target_  = {frame::pick::kShare, frame::pick::k1st, frame::pick::k2nd,
-                   frame::pick::k3rd,   frame::pick::k4th, frame::pick::k5th};
-  place_target_ = {frame::place::kShare, frame::place::k1st, frame::place::k2nd,
-                   frame::place::k3rd,   frame::place::k4th, frame::place::k5th};
+  pick_target_  = {frame::kDepart,    frame::pick::kShare, frame::pick::k1st, frame::pick::k2nd,
+                   frame::pick::k3rd, frame::pick::k4th,   frame::pick::k5th};
+  place_target_ = {frame::kDepart,     frame::place::kShare, frame::place::k1st, frame::place::k2nd,
+                   frame::place::k3rd, frame::place::k4th,   frame::place::k5th};
 
   /* register callback when some actions occur */
   this->RegisterButtonPressedCallback(
@@ -87,6 +87,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     next_target_ = place_target_.at(place_index);
     RCLCPP_INFO(this->get_logger(), "curent place index: %d, target name: %s", place_index,
                 next_target_.c_str());
+    PublishNextTargetMsg(next_target_);
   });
 
   this->RegisterAxisChangedCallback(Axis::CrossY, [this](double pre, double new_value) -> void {
@@ -98,6 +99,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     next_target_ = pick_target_.at(pick_index);
     RCLCPP_INFO(this->get_logger(), "curent pick index: %d, target name: %s", pick_index,
                 next_target_.c_str());
+    PublishNextTargetMsg(next_target_);
   });
 
   // this->RegisterButtonPressedCallback(
@@ -107,6 +109,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   world_coord_pub_     = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
   joint_pub_           = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
   current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame", qos);
+  next_target_pub_     = create_publisher<std_msgs::msg::String>("next_target", qos);
   move_mode_pub_       = create_publisher<kirin_msgs::msg::MoveMode>("move_mode", qos);
   timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_
@@ -116,6 +119,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   /* publish initial message */
   PublishBellowsMsg(current_bellows_frame_);
   PublishModeMsg(move_mode_);
+  PublishNextTargetMsg(next_target_);
 }
 
 WorldCoordManualController::~WorldCoordManualController() {}
@@ -136,8 +140,8 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   if (z_auto_.enabled) {
     std::string target;
     double offset;
-    if (z_auto_.state == ZAutoState::Approach) {
-      target = frame::pick::k1st;
+    if (z_auto_.state == ZAutoState::Approach && next_target_ != frame::kDepart) {
+      target = next_target_;
       offset = z_auto_.approach_offset;
     } else {
       target = frame::kDepart;
@@ -349,6 +353,12 @@ void WorldCoordManualController::PublishBellowsMsg(const std::string& bellows) {
   std_msgs::msg::String bellows_msg;
   bellows_msg.data = bellows;
   current_bellows_pub_->publish(std::move(bellows_msg));
+}
+
+void WorldCoordManualController::PublishNextTargetMsg(const std::string& next_target) {
+  std_msgs::msg::String next_target_msg;
+  next_target_msg.data = next_target;
+  next_target_pub_->publish(std::move(next_target_msg));
 }
 
 void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mode) {
