@@ -19,7 +19,7 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   joint_sub_ = create_subscription<JointState>("joint_states", qos, joint_callback_);
-  motor_pub_ = create_publisher<MotorStateVector>("motor/reference", qos);
+  motor_pub_ = create_publisher<MotorStateVector>("motor/stete/reference", qos);
 }
 
 void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) {

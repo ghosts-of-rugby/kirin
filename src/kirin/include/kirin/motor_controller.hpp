@@ -50,6 +50,7 @@ struct ControllerCurrentInput : public ControllerBase {
 class MotorController : public rclcpp::Node {
  public:
   using MotorStateVector = kirin_msgs::msg::MotorStateVector;
+  using Motor            = kirin_msgs::msg::Motor;
   explicit MotorController(
       const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
@@ -60,12 +61,14 @@ class MotorController : public rclcpp::Node {
   std::optional<ControllerVelocityInput> controller_right, controller_left,
       controller_z;
   std::optional<ControllerCurrentInput> controller_theta;
+  Motor pre_input;
 
   void ShowWarning(const std::array<bool, 4>& state_has_value_arr);
   void MotorStateVectorReceiveCallback(const MotorStateVector::UniquePtr msg);
   std::function<void(const MotorStateVector::UniquePtr)> motor_callback_;
   rclcpp::Subscription<MotorStateVector>::SharedPtr motor_sub_;
   rclcpp::Publisher<MotorStateVector>::SharedPtr current_motor_pub_;
+  rclcpp::Publisher<Motor>::SharedPtr motor_input_ref_pub_, motor_input_cur_pub_;
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_MOTOR_CONTROLLER */

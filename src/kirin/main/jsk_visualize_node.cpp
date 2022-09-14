@@ -25,9 +25,9 @@ class JskVisualizeNode : public rclcpp::Node {
         = std::bind(&JskVisualizeNode::MotorCallback, this, "reference", std::placeholders::_1);
     cur_motor_callback_
         = std::bind(&JskVisualizeNode::MotorCallback, this, "current", std::placeholders::_1);
-    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/reference", qos,
+    ref_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/stete/reference", qos,
                                                                             ref_motor_callback_);
-    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/current", qos,
+    cur_motor_sub_ = create_subscription<kirin_msgs::msg::MotorStateVector>("motor/state/current", qos,
                                                                             cur_motor_callback_);
 
     /* show joint state */

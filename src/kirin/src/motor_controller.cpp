@@ -124,11 +124,17 @@ MotorController::MotorController(const rclcpp::NodeOptions& options)
   } else {
     RCLCPP_WARN(this->get_logger(), "motor hardware deactivated");
   }
+  pre_input.left = 0.0;
+  pre_input.right= 0.0;
+  pre_input.theta= 0.0;
+  pre_input.z= 0.0;
 
   rclcpp::QoS qos(rclcpp::KeepLast(2));
-  motor_sub_ = create_subscription<MotorStateVector>("motor/reference", qos,
+  motor_sub_ = create_subscription<MotorStateVector>("motor/stete/reference", qos,
                                                      motor_callback_);
-  current_motor_pub_ = create_publisher<MotorStateVector>("motor/current", qos);
+  current_motor_pub_ = create_publisher<MotorStateVector>("motor/state/current", qos);
+  motor_input_ref_pub_ = create_publisher<Motor>("motor/input/reference", qos);
+  motor_input_cur_pub_ = create_publisher<Motor>("motor/input/current", qos);
 }
 
 void MotorController::ShowWarning(const std::array<bool, 4>& state_has_value_arr) {
@@ -162,6 +168,8 @@ void MotorController::MotorStateVectorReceiveCallback(
                       .z = msg->velocity.z};
 
   auto current_motor = std::make_unique<MotorStateVector>();
+  auto input_ref = std::make_unique<Motor>();
+  auto input_cur = std::make_unique<Motor>();
 
   if (use_hardware_) {
     current_motor->angle.left = 0;
@@ -232,6 +240,36 @@ void MotorController::MotorStateVectorReceiveCallback(
         controller_theta->angle * controller_theta->dir;
     current_motor->velocity.theta =
         controller_theta->velocity * controller_theta->dir;
+    
+    /* log input */
+    input_ref->left = 0.0;
+    input_ref->right = 0.0;
+    input_ref->z = 0.0;
+    input_ref->theta = theta_current;
+    if(state_left.has_value()) {
+      input_cur->left = state_left->current;
+      pre_input.left = state_left->current;
+    } else {
+      input_cur->left = pre_input.left;
+    }
+    if(state_right.has_value()) {
+      input_cur->right = state_right->current;
+      pre_input.right = state_right->current;
+    } else {
+      input_cur->right = pre_input.right;
+    }
+    if(state_theta.has_value()) {
+      input_cur->theta = state_theta->current;
+      pre_input.theta = state_theta->current;
+    } else {
+      input_cur->theta = pre_input.theta;
+    }
+    if(state_z.has_value()) {
+      input_cur->z = state_z->current;
+      pre_input.z = state_z->current;
+    } else {
+      input_cur->z = pre_input.z;
+    }
   } else {
     current_motor->angle.left = angle.left;
     current_motor->angle.right = angle.right;
@@ -241,7 +279,17 @@ void MotorController::MotorStateVectorReceiveCallback(
     current_motor->velocity.right = velocity.right;
     current_motor->velocity.theta = velocity.theta;
     current_motor->velocity.z = velocity.theta;
+    input_ref->left = 0.0;
+    input_ref->right = 0.0;
+    input_ref->z = 0.0;
+    input_ref->theta = 0.0;
+    input_cur->left = 0.0;
+    input_cur->right = 0.0;
+    input_cur->z = 0.0;
+    input_cur->theta = 0.0;
   }
+  motor_input_ref_pub_->publish(std::move(input_ref));
+  motor_input_cur_pub_->publish(std::move(input_cur));
 
   /* 受け取ったデータをpublish */
   current_motor_pub_->publish(std::move(current_motor));
