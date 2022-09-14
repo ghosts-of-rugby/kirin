@@ -24,7 +24,7 @@ constexpr double kThetaGearRatio = 15. / 136.;
 // constexpr double kZGearRatio = 1.0; // (temp)
 // /* motor gear radius */
 // constexpr double kZGearRadius = 1.0; // (temp)
-constexpr double kZRatio         = 0.02387 / 2. * M_PI;
+constexpr double kZRatio         = 0.02387 * M_PI / (2. * M_PI);
 
 /* z offset from base axis to theta link */
 constexpr double kZOffsetBaseToTheta  = 0.022;
