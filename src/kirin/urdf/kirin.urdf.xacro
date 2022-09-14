@@ -84,7 +84,7 @@
   <joint name="depart_joint" type="fixed">
     <parent link="fix_base"/>
     <child link="depart"/>
-    <origin xyz="0.55 0.55 0.225" rpy="0.0 0.0 ${-pi/2}"/>
+    <origin xyz="0.65 0.55 0.225" rpy="0.0 0.0 ${-pi/2}"/>
   </joint>
 
 </robot>
