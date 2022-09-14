@@ -51,7 +51,7 @@ double ControllerCurrentInput::GetInput(double ref_velocity, double ref_angle) {
     is_first_time = false;
   }
   double input = Kp_pos * (ref_angle - angle) +
-                 Kp_vel * (ref_velocity - velocity) + this->dist_est;
+                 Kp_vel * (ref_velocity - velocity) + 0.0 * (this->dist_est);
   input = std::clamp(input, -max_current, max_current);
   pre_input = input;
   return input;
