@@ -63,6 +63,7 @@ class WorldCoordManualController : public JoyController {
   const std::string joy_topic_name_{"joy"};
   const std::string input_topic_name_{"world_coord_pose"};
   std::function<void()> timer_callback_;
+  Eigen::Vector3d initial_pos_;
   Eigen::Vector3d pos_;
   Eigen::Vector3d vel_;
   double psi_;

@@ -2,9 +2,9 @@ world_coord_controller:
   ros__parameters:
     velocity_ratio:
       normal:
-        x: 0.3
-        y: 0.3
-        z: 0.2
+        x: 0.2
+        y: 0.2
+        z: 0.1
         psi: 0.3
       adjust:
         x: 0.05
@@ -12,15 +12,15 @@ world_coord_controller:
         z: 0.04
         psi: 0.05
     xy_auto:
-      ratio: 2.0
-      max_speed: 0.5
+      ratio: 1.5
+      max_speed: 0.2
     psi_auto:
-      ratio: 3.0
-      max_speed: 1.0
+      ratio: 2.0
+      max_speed: 0.8
     z_auto:
       ratio: 2.0
       max_speed: 0.3
-      approach_offset: 0.017
+      approach_offset: 0.03
 
 joint_state_publisher:
   ros__parameters:
@@ -46,19 +46,19 @@ motor_controller:
     right:
       id: 0x06
       dir: 1
-      Kp: 4.0
+      Kp: 3.0
       max_speed: 10.0
     left:
       id: 0x09
       dir: -1
-      Kp: 4.0
+      Kp: 3.0
       max_speed: 10.0
     theta:
       id: 0x06
       dir: 1
-      max_current: 3.0
-      Kp_pos: 0.3
-      Kp_vel: 0.3
+      max_current: 2.0
+      Kp_pos: 2.0
+      Kp_vel: 0.08
       observer:
         K: 15.7
         pole1: -20.0

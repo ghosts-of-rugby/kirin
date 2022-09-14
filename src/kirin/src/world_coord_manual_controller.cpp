@@ -15,9 +15,10 @@ using namespace std::chrono_literals;
 WorldCoordManualController::WorldCoordManualController(const std::string& node_name,
                                                        const rclcpp::NodeOptions& options)
     : JoyController(node_name, options),
-      pos_(0.546 + 0.05, 0.00, 0.127),
+      initial_pos_(0.0001, -(0.546 + 0.05), 0.022 + 0.128 - 0.0235 - 0.042),
+      pos_(initial_pos_),
       vel_(0.0, 0.0, 0.0),
-      psi_(0.0),
+      psi_(-M_PI/2),
       dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
       move_mode_{kirin_types::MoveMode::Manual},
@@ -57,10 +58,10 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   /* register callback when some actions occur */
   this->RegisterButtonPressedCallback(
-      Button::A, std::bind(&WorldCoordManualController::ChangeHandStateClientRequest, this));
+      Button::X, std::bind(&WorldCoordManualController::ChangeHandStateClientRequest, this));
 
   this->RegisterButtonPressedCallback(
-      Button::X, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
+      Button::A, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
   this->RegisterButtonPressedCallback(
       Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
@@ -160,7 +161,7 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
     auto z_auto_input = GenerateAutoZVelocity(target, offset);
     if (z_auto_input.has_value()) {
       auto [z_vel, z_distance] = z_auto_input.value();
-      RCLCPP_INFO(this->get_logger(), "z auto input: %f, z_distance: %f", z_vel, z_distance);
+      // RCLCPP_INFO(this->get_logger(), "z auto input: %f, z_distance: %f", z_vel, z_distance);
       vel_.z() = z_vel;
       if (std::abs(z_distance - sgn(z_distance) * offset) <= 0.005) {
         z_auto_.enabled = false;
@@ -176,9 +177,9 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
       auto [plane_vel, plane_distance] = planar_auto_input.value();
       auto [xy_vel, psi_vel]           = plane_vel;
       auto [xy_distance, psi_distance] = plane_distance;
-      RCLCPP_INFO(this->get_logger(),
-                  "x y psi auto input: [ %f, %f, %f ], x y psi distance: [ %f, %f, %f ]",
-                  xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(), psi_distance);
+      // RCLCPP_INFO(this->get_logger(),
+      //             "x y psi auto input: [ %f, %f, %f ], x y psi distance: [ %f, %f, %f ]",
+      //             xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(), psi_distance);
       vel_.x() = xy_vel.x();
       vel_.y() = xy_vel.y();
       dpsi_    = psi_vel;
@@ -255,7 +256,7 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
 
   double r_offset = 0.345 + 0.201;
-  double z_offset = 0.1;
+  double z_offset = 0.022 + 0.128 - 0.0235 - 0.042;
 
   static double pre_r     = 0.0;
   static double pre_theta = 0.0;

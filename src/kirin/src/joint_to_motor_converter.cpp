@@ -39,9 +39,10 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
   Eigen::Vector2d r_phi_pos{joint.r - initial_joint_.r, joint.phi - initial_joint_.phi};
   Eigen::Vector2d r_phi_vel{joint_vel.r, joint_vel.phi};
 
+  double theta_offset = -M_PI/2;
   Eigen::Vector2d motor_pos = mat_motor_to_joint_.inverse() * r_phi_pos;
   Eigen::Vector2d motor_vel = mat_motor_to_joint_.inverse() * r_phi_vel;
-  MotorAngle motor_angle{.theta = joint.theta / machine::kThetaGearRatio,
+  MotorAngle motor_angle{.theta = (joint.theta - theta_offset)/ machine::kThetaGearRatio,
                          .left  = motor_pos.x(),
                          .right = motor_pos.y(),
                          // .z = joint.z / machine::kZGearRatio * machine::kZGearRadius
