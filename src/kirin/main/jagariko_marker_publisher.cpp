@@ -57,8 +57,10 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       double base_y          = 0.65;
       double x_distance      = 0.1;
       double jagariko_height = 0.08;
+      double yaw_odd         = (is_red) ? 0.0 : M_PI;
+      double yaw_even        = (is_red) ? -M_PI : 0.0;
       for (int l = 0; l < PLACE_POSE_NUM - 1; l++) {
-        double yaw         = (l % 2 == 1) ? 0.0 : color_dir * M_PI;
+        double yaw         = (l % 2 == 1) ? yaw_odd : yaw_even;
         place_poses_.at(l) = {base_x + x_distance * (l + 1) * color_dir, base_y, 0.0, yaw};
       }
       place_poses_.at(PLACE_POSE_NUM - 1)
@@ -78,7 +80,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       for (const auto& [idx, frame_name] : target) {
         auto [x, y] = jaga_poses_.at(idx);
         double z    = 0.08;
-        double yaw  = color_dir * M_PI_2;  // parent_frame: field(base_link)
+        double yaw  = -1.0 * M_PI_2;  // parent_frame: field(base_link)
         transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
@@ -92,7 +94,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
         auto [x, y]    = share_jaga_poses_.at(idx);
         double share_z = 0.035;
         double z       = 0.08 + share_z;
-        double yaw     = 0.0;
+        double yaw     = (is_red) ? 0.0 : M_PI;
         transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
