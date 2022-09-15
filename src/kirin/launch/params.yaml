@@ -56,13 +56,13 @@ motor_controller:
     theta:
       id: 0x06
       dir: 1
-      max_current: 2.0
-      Kp_pos: 2.0
-      Kp_vel: 0.08
+      max_current: 3.0
+      Kp_pos: 3.0
+      Kp_vel: 1.0
       observer:
-        K: 15.7
-        pole1: -20.0
-        pole2: -10.0
+        K: 5.4
+        pole1: -10.0
+        pole2: -8.0
     z:
       id: 0x09
       dir: -1
