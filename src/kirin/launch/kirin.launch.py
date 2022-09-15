@@ -1,4 +1,4 @@
-import os
+import os, math
 
 from ament_index_python.packages import get_package_share_path
 
@@ -11,6 +11,8 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
+  field_color = "blue"
+
   # get urdf and rviz config path
   kirin_package_path = get_package_share_path('kirin')
   urdf_path = os.path.join(kirin_package_path, 'urdf/kirin.urdf.xacro')
@@ -51,7 +53,7 @@ def generate_launch_description():
 
   # robot_state_publisher
   # TODO evaluate from parameter
-  robot_description = ParameterValue(Command(['xacro ', str(urdf_path), ' field:='+'blue']),
+  robot_description = ParameterValue(Command(['xacro ', str(urdf_path), ' field:='+field_color]),
                                      value_type=str)
   robot_state_publisher_node = Node(
     package='robot_state_publisher',
@@ -72,19 +74,23 @@ def generate_launch_description():
   )
   
   # arg にする
-  red = 1
-  base_position = [red * -0.95, 0.0, 0]
-  base_orientation = [0.0, 0.0, 0.0, 1.0]
+  if (field_color == "red"):
+    base_position = [-0.95, 0.0, 0]
+    base_orientation = [0.0, 0.0, 0.0]
+  else:
+    base_position = [0.95, 0.0, 0]
+    base_orientation = [math.pi, 0.0, 0.0]
   base_publisher = Node(
     package="tf2_ros",
     executable="static_transform_publisher",
     arguments=list(map(str, base_position)) + list(map(str, base_orientation)) + ["base_link", "fix_base"]
   )
+  field_orientation = [0.0, 0.0, 0.0]
   field_frame_publisher = Node(
     package="tf2_ros",
     executable="static_transform_publisher",
     name="field_frame_publisher",
-    arguments=list(map(str, [0.0, 0.0, 0.0])) + list(map(str, base_orientation)) + ["base_link", "field"]
+    arguments=list(map(str, [0.0, 0.0, 0.0])) + list(map(str, field_orientation)) + ["base_link", "field"]
   )
 
   rviz_node = Node(
