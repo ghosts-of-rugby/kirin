@@ -11,7 +11,7 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
-  field_color = "blue"
+  field_color = "red"
 
   # get urdf and rviz config path
   kirin_package_path = get_package_share_path('kirin')

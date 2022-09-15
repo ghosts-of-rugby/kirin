@@ -18,6 +18,7 @@ find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(Matlab REQUIRED)
 
 file(GLOB src_files src/*.cpp)
 file(GLOB gencode_files gencode/*.cpp)
@@ -53,7 +54,7 @@ custom_executable(test_hand_tool_manager    main/test)
 include_directories(
   include
   gencode
-  /usr/local/MATLAB/R2020a/extern/include
+  ${Matlab_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}/lib/magic_enum/include
 )
