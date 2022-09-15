@@ -39,6 +39,26 @@ class WorldCoordManualController : public JoyController {
     Depart
   };
 
+  enum class InitialAuto {
+    Wait,
+    Start,
+    GoInitialDepart,
+    GoShareWait,
+    WaitRapidFinished,
+    RapidFinished,
+    GoShare,
+    WaitPicked,
+    Picked,
+    GoDepartZ,
+    GoDepartXY,
+    GoPlaceAbove,
+    GoPlaceHeight,
+    WaitPlaceAdjustment,
+    AdjustmentCompleted,
+    GoStandby,
+    End
+  };
+
   struct ZAuto {
     bool enabled     = false;
     ZAutoState state = ZAutoState::Depart;
@@ -75,9 +95,10 @@ class WorldCoordManualController : public JoyController {
   std::string current_bellows_frame_;
   VelocityRatio velocity_ratio_normal_;
   VelocityRatio velocity_ratio_adjust_;
+  InitialAuto initial_auto_{InitialAuto::Wait};
   ZAuto z_auto_;
   PlanarAuto planar_auto_;
-  bool is_air_on{false};
+  bool is_air_on_{false};
 
   int pick_index{0};
   const int pick_max_index{frame::pick::kNum};
@@ -106,6 +127,7 @@ class WorldCoordManualController : public JoyController {
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                                const std::string& child_frame);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
+  void InitialAutoMovement();
   void SetCurrentBellows(const std::string& bellows_frame);
   void ChangeBellows();
   void PublishJointState(double l, double phi_offset);

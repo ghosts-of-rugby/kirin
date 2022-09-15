@@ -27,7 +27,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   /* color direction from field */
   is_red_    = declare_parameter("field", "blue") == "red";
   color_dir_ = is_red_ ? -1.0 : 1.0;
-  if (!is_red_) { // if blue, fix initial position
+  if (!is_red_) {  // if blue, fix initial position
     pos_.y()         = -1.0 * pos_.y();
     psi_             = -1.0 * psi_;
     initial_pos_.y() = -1.0 * initial_pos_.y();
@@ -77,6 +77,19 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   // this->RegisterButtonPressedCallback(
   //     Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
+  this->RegisterButtonPressedCallback(Button::Start, [this]() -> void {
+    // initial auto movement start
+    if (initial_auto_ == InitialAuto::Wait) {
+      initial_auto_ = InitialAuto::Start;
+      RCLCPP_INFO(this->get_logger(), "Start Initial Auto Movement");
+    } else if (initial_auto_ == InitialAuto::WaitRapidFinished) {
+      initial_auto_ = InitialAuto::RapidFinished;
+    } else if (initial_auto_ == InitialAuto::WaitPicked) {
+      initial_auto_ = InitialAuto::Picked;
+    } else if (initial_auto_ == InitialAuto::WaitPlaceAdjustment) {
+      if (!is_air_on_) initial_auto_ = InitialAuto::AdjustmentCompleted;
+    }
+  });
 
   this->RegisterButtonPressedCallback(Button::Home, [this]() -> void {
     // if robot is not in auto movement and pump is not on
@@ -84,6 +97,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       next_target_         = frame::kDepart;
       current_target_      = frame::kDepart;
       z_auto_.enabled      = true;
+      z_auto_.state        = ZAutoState::Depart;
       planar_auto_.enabled = true;
       RCLCPP_INFO(this->get_logger(), "Go to depart position");
     }
@@ -307,6 +321,11 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
 }
 
 void WorldCoordManualController::TimerCallback() {
+  /* InitialAutoMovement */
+  if (initial_auto_ != InitialAuto::End) {
+    InitialAutoMovement();
+  }
+
   // calculate length from base to current bellows
   auto&& bellows_in_phi_link = GetPoseFromTf(frame::kPhiLink, current_bellows_frame_);
   double l, phi_offset;
@@ -332,6 +351,135 @@ void WorldCoordManualController::TimerCallback() {
   PublishAllStateMsg();
 }
 
+void WorldCoordManualController::InitialAutoMovement() {
+  switch (initial_auto_) {
+    case InitialAuto::Wait: {
+      // wait start button pushed
+      PublishNextTargetMsg(frame::kInitialDepart);
+      return;
+    }
+    case InitialAuto::Start: {
+      next_target_    = frame::kInitialDepart;
+      current_target_ = frame::kInitialDepart;
+      PublishNextTargetMsg(next_target_);
+      planar_auto_.enabled = true;
+      z_auto_.enabled      = true;
+      initial_auto_        = InitialAuto::GoInitialDepart;
+      return;
+    }
+    case InitialAuto::GoInitialDepart: {
+      if (!planar_auto_.enabled) {  // when initial depart reached
+        next_target_    = frame::kShareWait;
+        current_target_ = frame::kShareWait;
+        PublishNextTargetMsg(next_target_);
+        planar_auto_.enabled = true;
+        initial_auto_        = InitialAuto::GoShareWait;
+      }
+      return;
+    }
+    case InitialAuto::GoShareWait: {
+      if (!planar_auto_.enabled) {  // when share waith reached
+        ChangePumpStateClientRequest();
+        initial_auto_ = InitialAuto::WaitRapidFinished;
+        PublishNextTargetMsg(frame::pick::kShare2);
+      }
+      return;
+    }
+    case InitialAuto::WaitRapidFinished: {
+      // wait start button pushed
+      PublishNextTargetMsg(frame::pick::kShare2);
+      return;
+    }
+    case InitialAuto::RapidFinished: {
+      next_target_    = frame::pick::kShare2;
+      current_target_ = frame::pick::kShare2;
+      PublishNextTargetMsg(next_target_);
+      planar_auto_.enabled = true;
+      z_auto_.enabled      = true;
+      z_auto_.state        = ZAutoState::Approach;
+      ChangeHandStateClientRequest();
+      initial_auto_ = InitialAuto::GoShare;
+      return;
+    }
+    case InitialAuto::GoShare: {
+      if (!planar_auto_.enabled && !z_auto_.enabled) {
+        next_target_ = frame::kDepart;
+        PublishNextTargetMsg(next_target_);
+        initial_auto_ = InitialAuto::WaitPicked;
+      }
+      return;
+    }
+    case InitialAuto::WaitPicked: {
+      // wait start button pressed
+      return;
+    }
+    case InitialAuto::Picked: {
+      // when start button pressed
+      z_auto_.enabled = true;
+      z_auto_.state   = ZAutoState::Depart;
+      current_target_ = frame::kDepart;
+      initial_auto_   = InitialAuto::GoDepartZ;
+      return;
+    }
+    case InitialAuto::GoDepartZ: {
+      if (!z_auto_.enabled) {  // if z movement finished, start xy movement
+        planar_auto_.enabled = true;
+        ChangeHandStateClientRequest();
+        initial_auto_ = InitialAuto::GoDepartXY;
+      }
+      return;
+    }
+    case InitialAuto::GoDepartXY: {
+      if (!planar_auto_.enabled) {  // if planar movement finished, Go place point
+        current_target_      = frame::place::kShare;
+        next_target_         = frame::place::kShare;
+        planar_auto_.enabled = true;
+        initial_auto_        = InitialAuto::GoPlaceAbove;
+        PublishNextTargetMsg(next_target_);
+      }
+      return;
+    }
+    case InitialAuto::GoPlaceAbove: {
+      if (!planar_auto_.enabled) {
+        z_auto_.enabled = true;
+        z_auto_.state   = ZAutoState::Approach;
+        initial_auto_   = InitialAuto::GoPlaceHeight;
+      }
+      return;
+    }
+    case InitialAuto::GoPlaceHeight: {
+      if (!z_auto_.enabled) {
+        initial_auto_ = InitialAuto::WaitPlaceAdjustment;
+      }
+      return;
+    }
+    case InitialAuto::WaitPlaceAdjustment: {
+      // wait button pushed
+      return;
+    }
+    case InitialAuto::AdjustmentCompleted: {
+      // when button pushed
+      current_target_      = frame::kDepart;
+      next_target_         = frame::kDepart;
+      planar_auto_.enabled = true;
+      z_auto_.enabled      = true;
+      z_auto_.state        = ZAutoState::Depart;
+      initial_auto_        = InitialAuto::GoStandby;
+      PublishNextTargetMsg(next_target_);
+      return;
+    }
+    case InitialAuto::GoStandby: {
+      if (!planar_auto_.enabled && !z_auto_.enabled) {
+        initial_auto_ = InitialAuto::End;
+      }
+      return;
+    }
+    case InitialAuto::End: {
+      return;
+    }
+  }
+}
+
 void WorldCoordManualController::ChangeHandStateClientRequest() {
   auto request    = std::make_shared<kirin_msgs::srv::ToggleHandState::Request>();
   request->toggle = true;
@@ -351,7 +499,7 @@ void WorldCoordManualController::ChangeHandStateClientRequest() {
 void WorldCoordManualController::ChangePumpStateClientRequest() {
   auto request = std::make_shared<kirin_msgs::srv::SetAirState::Request>();
 
-  auto next_state             = !is_air_on;
+  auto next_state             = !is_air_on_;
   request->air_state.left     = next_state;
   request->air_state.right    = next_state;
   request->air_state.top      = next_state;
@@ -362,7 +510,7 @@ void WorldCoordManualController::ChangePumpStateClientRequest() {
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
   auto response_callback = [this, next_state](ResponseFuture future) {
     auto response = future.get();
-    if (response->result) this->is_air_on = next_state;
+    if (response->result) this->is_air_on_ = next_state;
   };
 
   auto future_result = set_air_state_client_->async_send_request(request, response_callback);
@@ -402,7 +550,7 @@ void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mod
 void WorldCoordManualController::PublishAllStateMsg() {
   // pump
   std::string pump_msg = "(Button [A] ) AirPumpState: ";
-  pump_msg += is_air_on ? "On" : "Off";
+  pump_msg += is_air_on_ ? "ON" : "OFF";
 
   // hand
   std::string hand_msg = "(Button [X] ) HandState   : ";
@@ -412,8 +560,12 @@ void WorldCoordManualController::PublishAllStateMsg() {
   std::string z_auto_msg = "(Button [RB]) ZAutoState : ";
   z_auto_msg += magic_enum::enum_name(z_auto_.state);
 
+  // initial auto movement
+  std::string initial_auto_msg = "Initial Auto: ";
+  initial_auto_msg += magic_enum::enum_name(initial_auto_);
+
   std_msgs::msg::String msg;
-  msg.data = pump_msg + "\n" + hand_msg + "\n" + z_auto_msg;
+  msg.data = pump_msg + "\n" + hand_msg + "\n" + z_auto_msg + "\n\n" + initial_auto_msg;
   all_state_msg_pub_->publish(std::move(msg));
 }
 
