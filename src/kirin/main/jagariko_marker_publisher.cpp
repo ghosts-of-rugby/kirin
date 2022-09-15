@@ -98,6 +98,13 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
         transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
+    // share wait target
+    {
+      double wait_x_offset = -0.2;
+      double wait_z_offset = 0.03;
+      transform_vec_.push_back(CreateTargetTransform(wait_x_offset, 0.0, wait_z_offset, 0.0,
+                                                     frame::kShareWait, frame::pick::kShare2));
+    }
     // place target
     {
       std::vector<std::tuple<int, std::string>> target = {
@@ -127,11 +134,16 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   }
 
  private:
-  geometry_msgs::msg::TransformStamped CreateTargetTransform(
-      double x, double y, double z, double yaw, const std::string& frame_name) {
+  geometry_msgs::msg::TransformStamped CreateTargetTransform(double x,
+                                                             double y,
+                                                             double z,
+                                                             double yaw,
+                                                             const std::string& frame_name,
+                                                             const std::string& parent_frame
+                                                             = frame::kBaseLink) {
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp    = this->get_clock()->now();
-    t.header.frame_id = frame::kBaseLink;
+    t.header.frame_id = parent_frame;
     t.child_frame_id  = frame_name;
 
     t.transform.translation.x = x;

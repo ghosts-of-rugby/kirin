@@ -52,6 +52,7 @@
 
   <link name="phi_link"/>
   <link name="depart"/>
+  <link name="initial_depart"/>
 
   <!-- joint settings -->
   <joint name="theta_joint" type="continuous">
@@ -93,6 +94,17 @@
     </xacro:if>
     <xacro:if value="${field=='blue'}">
       <origin xyz="0.65 -0.55 0.225" rpy="0.0 0.0 ${pi/2}"/>
+    </xacro:if>
+  </joint>
+
+  <joint name="initial_depart_joint" type="fixed">
+    <parent link="fix_base"/>
+    <child link="initial_depart"/>
+    <xacro:if value="${field=='red'}">
+      <origin xyz="0.65 -0.7 0.225" rpy="0.0 0.0 0.0"/>
+    </xacro:if>
+    <xacro:if value="${field=='blue'}">
+      <origin xyz="0.65 0.7 0.225" rpy="0.0 0.0 0.0"/>
     </xacro:if>
   </joint>
 

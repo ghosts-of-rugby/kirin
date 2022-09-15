@@ -60,6 +60,8 @@ Visualization Manager:
           Value: true
         fix_base:
           Value: true
+        initial_depart:
+          Value: true
         phi_link:
           Value: true
         pick_our_1:
@@ -105,6 +107,8 @@ Visualization Manager:
             {}
           fix_base:
             depart:
+              {}
+            initial_depart:
               {}
             theta_link:
               z_link:
@@ -171,6 +175,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        initial_depart:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         phi_link:
           Alpha: 1
           Show Axes: false
@@ -750,10 +758,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6497975587844849
+      Pitch: 0.9997973442077637
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 6.262302875518799
+      Yaw: 3.1341214179992676
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 2.67037034034729
