@@ -6,6 +6,11 @@ JointToMotorConverter::JointToMotorConverter(const rclcpp::NodeOptions& options)
     : Node("joint_to_motor_converter", options),
       joint_callback_(
           std::bind(&JointToMotorConverter::JointStateCallback, this, std::placeholders::_1)) {
+  /* color direction from field */
+  is_red_    = declare_parameter("field", "blue") == "red";
+  color_dir_ = is_red_ ? -1.0 : 1.0;
+
+  /* define convert matrix */
   double R_m   = machine::kMotorRadius;
   double R_phi = machine::kPhiRadius;
 
@@ -39,14 +44,16 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
   Eigen::Vector2d r_phi_pos{joint.r - initial_joint_.r, joint.phi - initial_joint_.phi};
   Eigen::Vector2d r_phi_vel{joint_vel.r, joint_vel.phi};
 
-  double theta_offset = -M_PI/2;
+  /* offset (difference) from initial position and motor (Note: motor angle start from 0.0) */
+  double theta_offset = (is_red_) ? machine::kRedInitialPsi : -1.0 * machine::kRedInitialPsi;
+  double z_offset = 0.0; // start point offset from z lowest point 
   Eigen::Vector2d motor_pos = mat_motor_to_joint_.inverse() * r_phi_pos;
   Eigen::Vector2d motor_vel = mat_motor_to_joint_.inverse() * r_phi_vel;
   MotorAngle motor_angle{.theta = (joint.theta - theta_offset)/ machine::kThetaGearRatio,
                          .left  = motor_pos.x(),
                          .right = motor_pos.y(),
                          // .z = joint.z / machine::kZGearRatio * machine::kZGearRadius
-                         .z     = joint.z / machine::kZRatio};
+                         .z     = (joint.z - z_offset) / machine::kZRatio};
   MotorAngle motor_velocity{
     .theta = joint_vel.theta / machine::kThetaGearRatio,
     .left = motor_vel.x(),

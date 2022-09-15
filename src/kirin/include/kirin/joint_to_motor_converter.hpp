@@ -16,6 +16,8 @@ class JointToMotorConverter : public rclcpp::Node {
 
  private:
   void JointStateCallback(const JointState::UniquePtr msg);
+  bool is_red_;
+  int color_dir_;
   std::function<void(const JointState::UniquePtr)> joint_callback_;
   rclcpp::Subscription<JointState>::SharedPtr joint_sub_;
   rclcpp::Publisher<MotorStateVector>::SharedPtr motor_pub_;
