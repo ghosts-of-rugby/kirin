@@ -278,32 +278,16 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   auto joint_state  = std::make_unique<sensor_msgs::msg::JointState>();
   joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
 
-  double r_offset = 0.345 + 0.201;
-  double z_offset = 0.022 + 0.128 - 0.0235 - 0.042;
-
-  static double pre_r     = 0.0;
-  static double pre_theta = 0.0;
-  static double pre_phi   = 0.0;
+  double r_offset = machine::kROffsetCenterToRRoot + machine::kROffsetRRootToPhi;
+  double z_offset = initial_pos_.z();
 
   double r     = model::CalcR(l, pos_.x(), pos_.y(), psi_);
   double theta = model::CalcTheta(l, pos_.x(), pos_.y(), psi_);
   double phi   = model::CalcPhi(l, pos_.x(), pos_.y(), psi_);
 
-  /* check */
-  double a_dr     = (r - pre_r) / 0.02;
-  double a_dtheta = (theta - pre_theta) / 0.02;
-  double a_dphi   = (phi - pre_phi) / 0.02;
-  pre_r           = r;
-  pre_theta       = theta;
-  pre_phi         = phi;
-
   double dr     = model::CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
   double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
   double dphi   = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-
-  // RCLCPP_INFO(this->get_logger(),
-  //             "[apx] dr: %5f, dtheta: %5f, dphi: %5f, [mat] dr: %5f, dtheta: %5f, dphi: %5f",
-  //             a_dr, a_dtheta, a_dphi, dr, dtheta, dphi);
 
   joint_state->position
       = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset, phi - phi_offset};
