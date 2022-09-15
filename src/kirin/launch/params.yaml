@@ -12,8 +12,8 @@ world_coord_controller:
         z: 0.04
         psi: 0.05
     xy_auto:
-      ratio: 1.5
-      max_speed: 0.2
+      ratio: 1.8
+      max_speed: 0.35
     psi_auto:
       ratio: 2.0
       max_speed: 0.8
@@ -46,7 +46,7 @@ motor_controller:
     right:
       id: 0x06
       dir: 1
-      Kp: 3.0
+      Kp: 1.0
       max_speed: 10.0
     left:
       id: 0x09
