@@ -131,7 +131,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterAxisChangedCallback(Axis::CrossY, [this](double pre, double new_value) -> void {
     /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
     if (std::abs(new_value) != 1.0) return;
-    int input = new_value * -1;
+    int input = new_value * color_dir_;
     pick_index += input;
     pick_index   = std::clamp(pick_index, 0, pick_max_index);
     next_target_ = pick_target_.at(pick_index);
@@ -288,7 +288,7 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
 
   /*  Offset between joint displacement and absolute position in the joint coordinate system */
   double r_offset = machine::kROffsetCenterToRRoot + machine::kROffsetRRootToPhi;
-  double z_offset = initial_pos_.z();
+  double z_offset = initial_pos_.z() - machine::kZOffsetInitialDisplacement;
 
   /* calculate absolute position in the joint coordinate */
   double r     = model::CalcR(l, pos_.x(), pos_.y(), psi_);

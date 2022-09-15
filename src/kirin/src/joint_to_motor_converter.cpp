@@ -46,7 +46,7 @@ void JointToMotorConverter::JointStateCallback(const JointState::UniquePtr msg) 
 
   /* offset (difference) from initial position and motor (Note: motor angle start from 0.0) */
   double theta_offset = (is_red_) ? machine::kRedInitialPsi : -1.0 * machine::kRedInitialPsi;
-  double z_offset = 0.0; // start point offset from z lowest point 
+  double z_offset = machine::kZOffsetInitialDisplacement;
   Eigen::Vector2d motor_pos = mat_motor_to_joint_.inverse() * r_phi_pos;
   Eigen::Vector2d motor_vel = mat_motor_to_joint_.inverse() * r_phi_vel;
   MotorAngle motor_angle{.theta = (joint.theta - theta_offset)/ machine::kThetaGearRatio,
