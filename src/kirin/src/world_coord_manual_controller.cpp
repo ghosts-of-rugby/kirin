@@ -18,7 +18,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       initial_pos_(0.0001, -(0.546 + 0.05), 0.022 + 0.128 - 0.0235 - 0.042),
       pos_(initial_pos_),
       vel_(0.0, 0.0, 0.0),
-      psi_(-M_PI/2),
+      psi_(-M_PI / 2),
       dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
       move_mode_{kirin_types::MoveMode::Manual},
@@ -51,8 +51,8 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   }
 
   /* define target arrary */
-  pick_target_  = {frame::kDepart,    frame::pick::kShare, frame::pick::k1st, frame::pick::k2nd,
-                   frame::pick::k3rd, frame::pick::k4th,   frame::pick::k5th};
+  pick_target_  = {frame::pick::kShare2, frame::pick::kShare1, frame::kDepart,    frame::pick::k1st,
+                   frame::pick::k2nd,    frame::pick::k3rd,    frame::pick::k4th, frame::pick::k5th};
   place_target_ = {frame::kDepart,     frame::place::kShare, frame::place::k1st, frame::place::k2nd,
                    frame::place::k3rd, frame::place::k4th,   frame::place::k5th};
 
@@ -69,9 +69,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(Button::Home, [this]() -> void {
     // if robot is not in auto movement and pump is not on
     if (!planar_auto_.enabled && !z_auto_.enabled && !is_air_on) {
-      next_target_ = frame::kDepart;
-      current_target_ = frame::kDepart;
-      z_auto_.enabled = true;
+      next_target_         = frame::kDepart;
+      current_target_      = frame::kDepart;
+      z_auto_.enabled      = true;
       planar_auto_.enabled = true;
       RCLCPP_INFO(this->get_logger(), "Go to depart position");
     }
@@ -79,7 +79,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterButtonPressedCallback(Button::RB, [this]() -> void {
     z_auto_.enabled = true;
-    if(!planar_auto_.enabled) { // disable to change target during planar movement
+    if (!planar_auto_.enabled) {  // disable to change target during planar movement
       // movement from pick to place or from place to pick is invalid
       ValidateAndUpdateTarget();
       current_target_ = next_target_;
@@ -184,7 +184,7 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
     if (z_auto_input.has_value()) {
       auto [z_vel, z_distance] = z_auto_input.value();
       // RCLCPP_INFO(this->get_logger(), "z auto input: %f, z_distance: %f", z_vel, z_distance);
-      vel_.z() = z_vel;
+      vel_.z()                 = z_vel;
       if (std::abs(z_distance - sgn(z_distance) * offset) <= 0.005) {
         z_auto_.enabled = false;
         RCLCPP_INFO(this->get_logger(), "z auto movement finished!");
@@ -201,10 +201,11 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
       auto [xy_distance, psi_distance] = plane_distance;
       // RCLCPP_INFO(this->get_logger(),
       //             "x y psi auto input: [ %f, %f, %f ], x y psi distance: [ %f, %f, %f ]",
-      //             xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(), psi_distance);
-      vel_.x() = xy_vel.x();
-      vel_.y() = xy_vel.y();
-      dpsi_    = psi_vel;
+      //             xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(),
+      //             psi_distance);
+      vel_.x()                         = xy_vel.x();
+      vel_.y()                         = xy_vel.y();
+      dpsi_                            = psi_vel;
       if (xy_distance.norm() <= 0.005 && std::abs(psi_distance) <= 0.03) {
         planar_auto_.enabled = false;
         RCLCPP_INFO(this->get_logger(), "planar auto movement finished!");
@@ -333,7 +334,7 @@ void WorldCoordManualController::TimerCallback() {
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
-  
+
   // publish all state
   PublishAllStateMsg();
 }
@@ -344,10 +345,10 @@ void WorldCoordManualController::ChangeHandStateClientRequest() {
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
   auto response_callback = [this](ResponseFuture future) {
-    auto response        = future.get();
+    auto response     = future.get();
     this->hand_state_ = (response->current_state.value == kirin_msgs::msg::HandState::EXTEND)
-                               ? kirin_types::HandState::Extend
-                               : kirin_types::HandState::Shrink;
+                            ? kirin_types::HandState::Extend
+                            : kirin_types::HandState::Shrink;
     // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
   };
 
@@ -413,7 +414,7 @@ void WorldCoordManualController::PublishAllStateMsg() {
   // hand
   std::string hand_msg = "(Button [X] ) HandState   : ";
   hand_msg += magic_enum::enum_name(hand_state_);
-  
+
   // zauto
   std::string z_auto_msg = "(Button [RB]) ZAutoState : ";
   z_auto_msg += magic_enum::enum_name(z_auto_.state);

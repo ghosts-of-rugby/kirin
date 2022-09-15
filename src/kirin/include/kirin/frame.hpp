@@ -18,7 +18,8 @@ const std::string kDepart{"depart"};
 
 namespace pick {
 const int kNum{6};
-const std::string kShare{"pick_share"};
+const std::string kShare1{"pick_share_1"};
+const std::string kShare2{"pick_share_2"};
 const std::string k1st{"pick_our_1"};
 const std::string k2nd{"pick_our_2"};
 const std::string k3rd{"pick_our_3"};

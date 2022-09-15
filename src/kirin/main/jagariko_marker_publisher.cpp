@@ -28,8 +28,12 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       : Node("jagariko_marker_publisher", options) {
     /* calculate jagariko position */
     // our jaga
+    bool is_red   = declare_parameter("field", "blue") == "red";
+    int color_dir = is_red ? -1.0 : 1.0;
+
+    // our jaga
     double distance = 0.2;
-    double top_x    = -1.0 * 0.4;  // if red
+    double top_x    = color_dir * 0.4;
     double top_y    = distance * 2.5;
     for (int l = 0; l < BLOCK_NUM; l++) {
       jaga_poses_.at(3 * l + 0) = {top_x, top_y - l * distance};
@@ -49,16 +53,16 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     /* calculate place position */
     // base is place point of rapid hand
     {
-      double base_x          = -1.0 * 0.874;  // if red
+      double base_x          = color_dir * 0.874;
       double base_y          = 0.65;
       double x_distance      = 0.1;
       double jagariko_height = 0.08;
       for (int l = 0; l < PLACE_POSE_NUM - 1; l++) {
-        double yaw         = (l % 2 == 1) ? 0.0 : -M_PI;
-        place_poses_.at(l) = {base_x + x_distance * (l+1) * -1.0, base_y, 0.0, yaw};  // if red
+        double yaw         = (l % 2 == 1) ? 0.0 : color_dir * M_PI;
+        place_poses_.at(l) = {base_x + x_distance * (l + 1) * color_dir, base_y, 0.0, yaw};
       }
       place_poses_.at(PLACE_POSE_NUM - 1)
-          = {base_x + x_distance * 3 * -1.0, base_y, jagariko_height, 0.0}; // if red
+          = {base_x + x_distance * 3 * color_dir, base_y, jagariko_height, 0.0};
     }
 
     /* create pick target transform */
@@ -71,36 +75,41 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
           {12, frame::pick::k4th},
           {15, frame::pick::k5th}
       };
-      for (const auto& [idx, frame] : target) {
+      for (const auto& [idx, frame_name] : target) {
         auto [x, y] = jaga_poses_.at(idx);
         double z    = 0.08;
-        double yaw  = -M_PI_2;  // parent_frame: field(base_link)
-        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame));
+        double yaw  = color_dir * M_PI_2;  // parent_frame: field(base_link)
+        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
     // share field target
     {
-      auto [x, y]    = share_jaga_poses_.at(2);
-      double share_z = 0.035;
-      double z       = 0.08 + share_z;
-      double yaw     = 0.0;
-      transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame::pick::kShare));
+      std::vector<std::tuple<int, std::string>> target = {
+          {2, frame::pick::kShare1},
+          {6, frame::pick::kShare2}
+      };
+      for (const auto& [idx, frame_name] : target) {
+        auto [x, y]    = share_jaga_poses_.at(idx);
+        double share_z = 0.035;
+        double z       = 0.08 + share_z;
+        double yaw     = 0.0;
+        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
+      }
     }
     // place target
     {
       std::vector<std::tuple<int, std::string>> target = {
           {0, frame::place::kShare},
-          {1, frame::place::k1st},
-          {2, frame::place::k2nd},
-          {3, frame::place::k3rd},
-          {4, frame::place::k4th},
-          {5, frame::place::k5th},
+          {1, frame::place::k1st  },
+          {2, frame::place::k2nd  },
+          {3, frame::place::k3rd  },
+          {4, frame::place::k4th  },
+          {5, frame::place::k5th  },
       };
-      for (const auto& [idx, frame] : target) {
+      for (const auto& [idx, frame_name] : target) {
         auto [x, y, offset, yaw] = place_poses_.at(idx);
-        double z = 0.08 + offset;
-        RCLCPP_INFO(this->get_logger(), "%s: %f, %f, %f, %f", frame.c_str(), x, y, offset, yaw);
-        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame));
+        double z                 = 0.08 + offset;
+        transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
 
