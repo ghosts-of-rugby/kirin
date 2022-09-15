@@ -27,13 +27,31 @@ constexpr double kThetaGearRatio = 15. / 136.;
 constexpr double kZRatio         = 0.02387 * M_PI / (2. * M_PI);
 
 /* z offset from base axis to theta link */
-constexpr double kZOffsetBaseToTheta  = 0.022;
+constexpr double kZOffsetBaseToTheta     = 0.022;
 /* z offset from theta axis to z link */
-constexpr double kZOffsetThetaToZ     = 0.128;
+constexpr double kZOffsetThetaToZ        = 0.128;
+/* z offset from z link to r link */
+constexpr double kZOffsetZToR            = 0.0;
+/* z offset from r link to Phi link */
+constexpr double kZOffsetRToPhi          = -0.0235;
+/* z offset from phi link to top bellows */
+constexpr double kZOffsetPhiToTopBellows = -0.042;
 /* r offset from center axis to root of r link */
-constexpr double kOffsetCenterToRRoot = 0.201;
+constexpr double kROffsetCenterToRRoot    = 0.201;
 /* r offset from r root to phi link */
-constexpr double kOffsetRRootToPhi    = 0.345;
+constexpr double kROffsetRRootToPhi       = 0.345;
+/* offset from phi link to top bellows */
+constexpr double kROffsetPhiToTopBellows  = 0.05;
+
+/* initial top bellows position */
+/* top bellows point is in  */
+constexpr double kRedInitialPosX = 0.0001;
+constexpr double kRedInitialPosY
+    = -(kROffsetCenterToRRoot + kROffsetRRootToPhi + kROffsetPhiToTopBellows);
+constexpr double kRedInitialPosZ = kZOffsetBaseToTheta + kZOffsetThetaToZ + kZOffsetZToR
+                                   + kZOffsetRToPhi + kZOffsetPhiToTopBellows;
+constexpr double kRedInitialPsi = -M_PI/2;
+
 
 /* joint state limit */
 namespace limit {

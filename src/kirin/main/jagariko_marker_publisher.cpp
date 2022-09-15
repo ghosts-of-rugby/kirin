@@ -26,11 +26,11 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
   explicit JagarikoMarkersPublisher(const std::string& topic_name,
                                     const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
       : Node("jagariko_marker_publisher", options) {
-    /* calculate jagariko position */
-    // our jaga
+    /* color direction from field */
     bool is_red   = declare_parameter("field", "blue") == "red";
     int color_dir = is_red ? -1.0 : 1.0;
 
+    /* calculate jagariko position */
     // our jaga
     double distance = 0.2;
     double top_x    = color_dir * 0.4;

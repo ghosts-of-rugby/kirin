@@ -50,7 +50,9 @@ def generate_launch_description():
 
 
   # robot_state_publisher
-  robot_description = ParameterValue(Command(['xacro ', str(urdf_path)]), value_type=str)
+  # TODO evaluate from parameter
+  robot_description = ParameterValue(Command(['xacro ', str(urdf_path), ' field:='+'blue']),
+                                     value_type=str)
   robot_state_publisher_node = Node(
     package='robot_state_publisher',
     executable='robot_state_publisher',
@@ -95,7 +97,7 @@ def generate_launch_description():
 
   kirin_main_executor = Node(
     package='kirin', executable='kirin_main_executor', output='screen',
-    parameters=[params_file, {'use_hardware': use_hardware}]
+    parameters=[params_file, {'use_hardware': use_hardware}, {'field': field}]
   )
 
   jagariko_marker_publiser = Node(
