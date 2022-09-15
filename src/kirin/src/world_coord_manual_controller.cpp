@@ -15,14 +15,26 @@ using namespace std::chrono_literals;
 WorldCoordManualController::WorldCoordManualController(const std::string& node_name,
                                                        const rclcpp::NodeOptions& options)
     : JoyController(node_name, options),
-      initial_pos_(0.0001, -(0.546 + 0.05), 0.022 + 0.128 - 0.0235 - 0.042),
+      initial_pos_(machine::kRedInitialPosX, machine::kRedInitialPosY, machine::kRedInitialPosZ),
       pos_(initial_pos_),
       vel_(0.0, 0.0, 0.0),
-      psi_(-M_PI / 2),
+      initial_psi_(machine::kRedInitialPsi),
+      psi_(initial_psi_),
       dpsi_(0.0),
       current_bellows_frame_{frame::kBellowsTop},
       move_mode_{kirin_types::MoveMode::Manual},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
+  /* color direction from field */
+  is_red_    = declare_parameter("field", "blue") == "red";
+  color_dir_ = is_red_ ? -1.0 : 1.0;
+  if (!is_red_) { // if blue, fix initial position
+    pos_.y()         = -1.0 * pos_.y();
+    psi_             = -1.0 * psi_;
+    initial_pos_.y() = -1.0 * initial_pos_.y();
+    initial_psi_     = -1.0 * initial_psi_;
+  }
+
+  /* get parameter */
   velocity_ratio_normal_ = {.x   = declare_parameter("velocity_ratio.normal.x", 0.0),
                             .y   = declare_parameter("velocity_ratio.normal.y", 0.0),
                             .z   = declare_parameter("velocity_ratio.normal.z", 0.0),
@@ -143,12 +155,6 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
   set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
 
-  {
-    // wait transform published from robot_state_publiser and hand_tool_manager
-    // TODO use lifecycle or not
-    std::this_thread::sleep_for(500ms);
-  }
-
   /* publish initial message */
   PublishBellowsMsg(current_bellows_frame_);
   PublishModeMsg(move_mode_);
@@ -162,6 +168,8 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   geometry_msgs::msg::Pose pose;
   auto velocity_ratio
       = (z_auto_.state == ZAutoState::Approach) ? velocity_ratio_adjust_ : velocity_ratio_normal_;
+
+  /* get manual velocity */
   vel_ = Eigen::Vector3d(this->GetAxis(JoyController::Axis::LStickX) * 1.0 * velocity_ratio.x,
                          this->GetAxis(JoyController::Axis::LStickY) * 1.0 * velocity_ratio.y,
                          this->GetAxis(JoyController::Axis::RStickX) * 1.0 * velocity_ratio.z);
@@ -278,9 +286,11 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   auto joint_state  = std::make_unique<sensor_msgs::msg::JointState>();
   joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
 
+  /*  Offset between joint displacement and absolute position in the joint coordinate system */
   double r_offset = machine::kROffsetCenterToRRoot + machine::kROffsetRRootToPhi;
   double z_offset = initial_pos_.z();
 
+  /* calculate absolute position in the joint coordinate */
   double r     = model::CalcR(l, pos_.x(), pos_.y(), psi_);
   double theta = model::CalcTheta(l, pos_.x(), pos_.y(), psi_);
   double phi   = model::CalcPhi(l, pos_.x(), pos_.y(), psi_);
@@ -289,6 +299,7 @@ void WorldCoordManualController::PublishJointState(double l, double phi_offset) 
   double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
   double dphi   = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
 
+  /* calculate joint displacement */
   joint_state->position
       = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset, phi - phi_offset};
   joint_state->velocity = {dtheta, vel_.z(), dr, dphi, dphi};
@@ -304,8 +315,6 @@ void WorldCoordManualController::TimerCallback() {
     double y   = bellows_in_phi_link.value().position.y;
     l          = sqrt(x * x + y * y);
     phi_offset = atan2(y, x);
-    // RCLCPP_INFO(this->get_logger(), "x: %f, y: %f", x, y);
-    // RCLCPP_INFO(this->get_logger(), "l: %f, phi offset: %f", l, phi_offset);
   } else {
     return;
   }

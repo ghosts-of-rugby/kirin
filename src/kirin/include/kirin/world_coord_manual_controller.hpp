@@ -60,12 +60,15 @@ class WorldCoordManualController : public JoyController {
   ~WorldCoordManualController();
 
  private:
+  bool is_red_;
+  int color_dir_;
   const std::string joy_topic_name_{"joy"};
   const std::string input_topic_name_{"world_coord_pose"};
   std::function<void()> timer_callback_;
   Eigen::Vector3d initial_pos_;
   Eigen::Vector3d pos_;
   Eigen::Vector3d vel_;
+  double initial_psi_;
   double psi_;
   double dpsi_;
   int loop_ms_{20};
