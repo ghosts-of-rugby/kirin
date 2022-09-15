@@ -106,6 +106,11 @@ def generate_launch_description():
     parameters=[params_file, {'use_hardware': use_hardware}, {'field': field}]
   )
 
+  hand_tool_manager_node = Node(
+    package='kirin', executable='hand_tool_manager_node', output='screen',
+    parameters=[params_file, {'use_hardware': use_hardware}, {'field': field}]
+  )
+
   jagariko_marker_publiser = Node(
     package='kirin', executable='jagariko_marker_publisher', output='screen',
     parameters=[{'field': field}]
@@ -122,6 +127,7 @@ def generate_launch_description():
     bag_record,
     joy_node,
     kirin_main_executor,
+    hand_tool_manager_node,
     joint_state_publisher_node,
     robot_state_publisher_node,
     base_publisher,

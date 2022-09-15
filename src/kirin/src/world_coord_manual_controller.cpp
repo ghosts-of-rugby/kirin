@@ -80,7 +80,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterButtonPressedCallback(Button::Home, [this]() -> void {
     // if robot is not in auto movement and pump is not on
-    if (!planar_auto_.enabled && !z_auto_.enabled && !is_air_on) {
+    if (!planar_auto_.enabled && !z_auto_.enabled) {
       next_target_         = frame::kDepart;
       current_target_      = frame::kDepart;
       z_auto_.enabled      = true;

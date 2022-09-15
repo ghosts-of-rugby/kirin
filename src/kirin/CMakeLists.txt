@@ -48,8 +48,8 @@ endfunction()
 custom_executable(kirin_main_executor       main)
 custom_executable(jagariko_marker_publisher main)
 custom_executable(jsk_visualize_node        main)
+custom_executable(hand_tool_manager_node    main)
 custom_executable(test_motor_controller     main/test)
-custom_executable(test_hand_tool_manager    main/test)
 
 include_directories(
   include
