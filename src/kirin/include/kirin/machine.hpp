@@ -20,11 +20,7 @@ constexpr double kPhiRadius      = 0.03979;
 constexpr double kMotorRadius    = 0.023875;
 /* theta gear ratio */
 constexpr double kThetaGearRatio = 25. / 136.;
-<<<<<<< HEAD
 // /* z gear ratio */
-=======
-// /* z gear ratio *
->>>>>>> origin/master
 // constexpr double kZGearRatio = 1.0; // (temp)
 // /* motor gear radius */
 // constexpr double kZGearRadius = 1.0; // (temp)
