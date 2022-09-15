@@ -21,10 +21,15 @@ def generate_launch_description():
     'params', default=[ThisLaunchFileDir(), '/params.yaml'])
   
   # create the launch configuration variables
+  field = LaunchConfiguration('field')
   use_hardware = LaunchConfiguration('use_hardware')
   record = LaunchConfiguration('record')
 
   # declare launch argument
+  declare_field = DeclareLaunchArgument(
+    'field',
+    description='field color (red or blue)'
+  )
   declare_use_hardware = DeclareLaunchArgument(
     'use_hardware',
     default_value='true',
@@ -94,7 +99,8 @@ def generate_launch_description():
   )
 
   jagariko_marker_publiser = Node(
-    package='kirin', executable='jagariko_marker_publisher', output='screen'
+    package='kirin', executable='jagariko_marker_publisher', output='screen',
+    parameters=[{'field': field}]
   )
 
   jsk_visualize_node = Node(
@@ -102,6 +108,7 @@ def generate_launch_description():
   )
 
   return LaunchDescription([
+    declare_field,
     declare_use_hardware,
     declare_record,
     bag_record,
