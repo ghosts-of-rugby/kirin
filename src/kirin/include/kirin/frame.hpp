@@ -17,7 +17,7 @@ const std::string kBellowsLeft{"bellows_left"};
 const std::string kDepart{"depart"};
 
 namespace pick {
-const int kNum{6};
+const int kNum{7};
 const std::string kShare1{"pick_share_1"};
 const std::string kShare2{"pick_share_2"};
 const std::string k1st{"pick_our_1"};

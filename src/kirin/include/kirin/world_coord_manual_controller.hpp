@@ -80,10 +80,10 @@ class WorldCoordManualController : public JoyController {
   bool is_air_on{false};
 
   int pick_index{0};
-  const int pick_max_index{frame::pick::kNum + 2 - 1};
+  const int pick_max_index{frame::pick::kNum};
   int place_index{0};
   const int place_max_index{frame::place::kNum};
-  std::array<std::string, frame::pick::kNum + 2> pick_target_;
+  std::array<std::string, frame::pick::kNum + 1> pick_target_;
   std::array<std::string, frame::place::kNum + 1> place_target_;
   std::string next_target_{frame::kDepart};
   std::string current_target_{frame::kDepart};
