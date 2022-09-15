@@ -37,11 +37,14 @@ constexpr double kZOffsetRToPhi          = -0.0235;
 /* z offset from phi link to top bellows */
 constexpr double kZOffsetPhiToTopBellows = -0.042;
 /* r offset from center axis to root of r link */
-constexpr double kROffsetCenterToRRoot    = 0.201;
+constexpr double kROffsetCenterToRRoot   = 0.201;
 /* r offset from r root to phi link */
-constexpr double kROffsetRRootToPhi       = 0.345;
+constexpr double kROffsetRRootToPhi      = 0.345;
 /* offset from phi link to top bellows */
-constexpr double kROffsetPhiToTopBellows  = 0.05;
+constexpr double kROffsetPhiToTopBellows = 0.05;
+
+/* z offset displacement from z lowest to initial */
+constexpr double kZOffsetInitialDisplacement = 0.1187;
 
 /* initial top bellows position */
 /* top bellows point is in  */
@@ -49,9 +52,9 @@ constexpr double kRedInitialPosX = 0.0001;
 constexpr double kRedInitialPosY
     = -(kROffsetCenterToRRoot + kROffsetRRootToPhi + kROffsetPhiToTopBellows);
 constexpr double kRedInitialPosZ = kZOffsetBaseToTheta + kZOffsetThetaToZ + kZOffsetZToR
-                                   + kZOffsetRToPhi + kZOffsetPhiToTopBellows;
-constexpr double kRedInitialPsi = -M_PI/2;
-
+                                   + kZOffsetRToPhi + kZOffsetPhiToTopBellows
+                                   + kZOffsetInitialDisplacement;
+constexpr double kRedInitialPsi = -M_PI / 2;
 
 /* joint state limit */
 namespace limit {
