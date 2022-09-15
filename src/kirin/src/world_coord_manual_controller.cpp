@@ -63,18 +63,32 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(
       Button::A, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
-  this->RegisterButtonPressedCallback(
-      Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
+  // this->RegisterButtonPressedCallback(
+  //     Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
+
+  this->RegisterButtonPressedCallback(Button::Home, [this]() -> void {
+    // if robot is not in auto movement and pump is not on
+    if (!planar_auto_.enabled && !z_auto_.enabled && !is_air_on) {
+      next_target_ = frame::kDepart;
+      current_target_ = frame::kDepart;
+      z_auto_.enabled = true;
+      planar_auto_.enabled = true;
+      RCLCPP_INFO(this->get_logger(), "Go to depart position");
+    }
+  });
 
   this->RegisterButtonPressedCallback(Button::RB, [this]() -> void {
     z_auto_.enabled = true;
-    auto next_state
-        = (z_auto_.state == ZAutoState::Approach) ? ZAutoState::Depart : ZAutoState::Approach;
-    z_auto_.state = next_state;
-    if(!planar_auto_.enabled) {
+    if(!planar_auto_.enabled) { // disable to change target during planar movement
       // movement from pick to place or from place to pick is invalid
       ValidateAndUpdateTarget();
       current_target_ = next_target_;
+    }
+    // change z auto state
+    if (current_target_ == frame::kDepart) z_auto_.state = ZAutoState::Depart;
+    else {
+      if (z_auto_.state == ZAutoState::Approach) z_auto_.state = ZAutoState::Depart;
+      else z_auto_.state = ZAutoState::Approach;
     }
     RCLCPP_INFO(this->get_logger(), "Z auto movement start");
   });
@@ -89,6 +103,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     }
   });
 
+  // crossx and crossy change next target
   this->RegisterAxisChangedCallback(Axis::CrossX, [this](double pre, double new_value) -> void {
     /* execute process when value jumped from 0.0 to -1.0 or 1.0 */
     if (std::abs(new_value) != 1.0) return;
@@ -121,11 +136,18 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   joint_pub_           = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
   current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame", qos);
   next_target_pub_     = create_publisher<std_msgs::msg::String>("next_target", qos);
+  all_state_msg_pub_   = create_publisher<std_msgs::msg::String>("all_state", qos);
   move_mode_pub_       = create_publisher<kirin_msgs::msg::MoveMode>("move_mode", qos);
   timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
   set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
+
+  {
+    // wait transform published from robot_state_publiser and hand_tool_manager
+    // TODO use lifecycle or not
+    std::this_thread::sleep_for(500ms);
+  }
 
   /* publish initial message */
   PublishBellowsMsg(current_bellows_frame_);
@@ -311,6 +333,9 @@ void WorldCoordManualController::TimerCallback() {
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
+  
+  // publish all state
+  PublishAllStateMsg();
 }
 
 void WorldCoordManualController::ChangeHandStateClientRequest() {
@@ -320,7 +345,7 @@ void WorldCoordManualController::ChangeHandStateClientRequest() {
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedFuture;
   auto response_callback = [this](ResponseFuture future) {
     auto response        = future.get();
-    this->current_state_ = (response->current_state.value == kirin_msgs::msg::HandState::EXTEND)
+    this->hand_state_ = (response->current_state.value == kirin_msgs::msg::HandState::EXTEND)
                                ? kirin_types::HandState::Extend
                                : kirin_types::HandState::Shrink;
     // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
@@ -336,8 +361,8 @@ void WorldCoordManualController::ChangePumpStateClientRequest() {
   request->air_state.left     = next_state;
   request->air_state.right    = next_state;
   request->air_state.top      = next_state;
-  request->air_state.ex_left  = (current_state_ == kirin_types::HandState::Extend) && next_state;
-  request->air_state.ex_right = (current_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.ex_left  = (hand_state_ == kirin_types::HandState::Extend) && next_state;
+  request->air_state.ex_right = (hand_state_ == kirin_types::HandState::Extend) && next_state;
   request->air_state.release  = !next_state;
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedFuture;
@@ -378,6 +403,24 @@ void WorldCoordManualController::PublishModeMsg(const kirin_types::MoveMode& mod
   else if (mode == kirin_types::MoveMode::Manual) msg.mode = kirin_msgs::msg::MoveMode::MANUAL;
   else /* mode == kirin_types::MoveMode::Stop) */ msg.mode = kirin_msgs::msg::MoveMode::STOP;
   move_mode_pub_->publish(std::move(msg));
+}
+
+void WorldCoordManualController::PublishAllStateMsg() {
+  // pump
+  std::string pump_msg = "(Button [A] ) AirPumpState: ";
+  pump_msg += is_air_on ? "On" : "Off";
+
+  // hand
+  std::string hand_msg = "(Button [X] ) HandState   : ";
+  hand_msg += magic_enum::enum_name(hand_state_);
+  
+  // zauto
+  std::string z_auto_msg = "(Button [RB]) ZAutoState : ";
+  z_auto_msg += magic_enum::enum_name(z_auto_.state);
+
+  std_msgs::msg::String msg;
+  msg.data = pump_msg + "\n" + hand_msg + "\n" + z_auto_msg;
+  all_state_msg_pub_->publish(std::move(msg));
 }
 
 std::optional<std::tuple<double, double>> WorldCoordManualController::GenerateAutoZVelocity(
