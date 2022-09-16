@@ -71,7 +71,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
     // out field pick target
     {
       std::vector<std::tuple<int, std::string>> target = {
-          {3,  frame::pick::k1st},
+          {2,  frame::pick::k1st},
           {6,  frame::pick::k2nd},
           {9,  frame::pick::k3rd},
           {12, frame::pick::k4th},
@@ -80,7 +80,8 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
       for (const auto& [idx, frame_name] : target) {
         auto [x, y] = jaga_poses_.at(idx);
         double z    = 0.08;
-        double yaw  = -1.0 * M_PI_2;  // parent_frame: field(base_link)
+        // parent_frame: field(base_link)
+        double yaw  = (frame_name == frame::pick::k1st) ? 0.0 : -1.0 * M_PI_2;
         transform_vec_.push_back(CreateTargetTransform(x, y, z, yaw, frame_name));
       }
     }
