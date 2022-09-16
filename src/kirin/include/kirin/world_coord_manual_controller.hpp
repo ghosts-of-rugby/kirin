@@ -100,6 +100,9 @@ class WorldCoordManualController : public JoyController {
   PlanarAuto planar_auto_;
   bool is_air_on_{false};
 
+  std::optional<Eigen::Vector2d> xy_distance_;
+  std::optional<double> psi_distance_;
+
   int pick_index{0};
   const int pick_max_index{frame::pick::kNum};
   int place_index{0};
@@ -127,6 +130,7 @@ class WorldCoordManualController : public JoyController {
   inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                                const std::string& child_frame);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
+  bool IsAllowedToChangeTarget();
   void InitialAutoMovement();
   void SetCurrentBellows(const std::string& bellows_frame);
   void ChangeBellows();

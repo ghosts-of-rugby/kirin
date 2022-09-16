@@ -120,7 +120,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   });
 
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
-    if (!planar_auto_.enabled) {
+    if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {
       // movement from pick to place or from place to pick is invalid
       ValidateAndUpdateTarget();
       current_target_      = next_target_;
@@ -177,6 +177,21 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
 WorldCoordManualController::~WorldCoordManualController() {}
 
+bool WorldCoordManualController::IsAllowedToChangeTarget() {
+  double depart_xy_threshold  = 0.3;
+  double depart_psi_threshold = 0.2;
+  if (current_target_ == frame::kDepart) {
+    if (xy_distance_.has_value() && psi_distance_.has_value()) {
+      return (xy_distance_->norm() <= depart_xy_threshold
+              && psi_distance_.value() <= depart_psi_threshold);
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
 geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   /* input manual velocity */
   geometry_msgs::msg::Pose pose;
@@ -218,21 +233,27 @@ geometry_msgs::msg::Pose WorldCoordManualController::GetManualPose() {
   if (planar_auto_.enabled) {
     auto planar_auto_input = GenerateAutoPlaneVelocity(current_target_);
     if (planar_auto_input.has_value()) {
-      auto [plane_vel, plane_distance] = planar_auto_input.value();
-      auto [xy_vel, psi_vel]           = plane_vel;
-      auto [xy_distance, psi_distance] = plane_distance;
+      auto [plane_vel, plane_distance]      = planar_auto_input.value();
+      auto [xy_vel, psi_vel]                = plane_vel;
+      std::tie(xy_distance_, psi_distance_) = plane_distance;
       // RCLCPP_INFO(this->get_logger(),
       //             "x y psi auto input: [ %f, %f, %f ], x y psi distance: [ %f, %f, %f ]",
       //             xy_vel.x(), xy_vel.y(), psi_vel, xy_distance.x(), xy_distance.y(),
       //             psi_distance);
-      vel_.x()                         = xy_vel.x();
-      vel_.y()                         = xy_vel.y();
-      dpsi_                            = psi_vel;
-      if (xy_distance.norm() <= 0.005 && std::abs(psi_distance) <= 0.03) {
+      vel_.x()                              = xy_vel.x();
+      vel_.y()                              = xy_vel.y();
+      dpsi_                                 = psi_vel;
+      double xy_threshold                   = (current_target_ == frame::kDepart) ? 0.05 : 0.002;
+      double psi_threshold                  = (current_target_ == frame::kDepart) ? 0.1 : 0.03;
+      if (xy_distance_->norm() <= xy_threshold
+          && std::abs(psi_distance_.value()) <= psi_threshold) {
         planar_auto_.enabled = false;
         RCLCPP_INFO(this->get_logger(), "planar auto movement finished!");
       }
     }
+  } else {
+    xy_distance_  = std::nullopt;
+    psi_distance_ = std::nullopt;
   }
 
   pos_ += vel_ * loop_ms_ * 0.001;
@@ -430,7 +451,7 @@ void WorldCoordManualController::InitialAutoMovement() {
       return;
     }
     case InitialAuto::GoDepartXY: {
-      if (!planar_auto_.enabled) {  // if planar movement finished, Go place point
+      if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {  // if planar movement finished, Go place point
         current_target_      = frame::place::kShare;
         next_target_         = frame::place::kShare;
         planar_auto_.enabled = true;
