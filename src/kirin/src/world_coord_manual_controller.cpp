@@ -379,7 +379,6 @@ void WorldCoordManualController::InitialAutoMovement() {
     }
     case InitialAuto::GoShareWait: {
       if (!planar_auto_.enabled) {  // when share waith reached
-        ChangePumpStateClientRequest();
         initial_auto_ = InitialAuto::WaitRapidFinished;
         PublishNextTargetMsg(frame::pick::kShare2);
       }
@@ -405,6 +404,7 @@ void WorldCoordManualController::InitialAutoMovement() {
       if (!planar_auto_.enabled && !z_auto_.enabled) {
         next_target_ = frame::kDepart;
         PublishNextTargetMsg(next_target_);
+        ChangePumpStateClientRequest();
         initial_auto_ = InitialAuto::WaitPicked;
       }
       return;

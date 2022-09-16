@@ -13,13 +13,13 @@ world_coord_controller:
         psi: 0.05
     xy_auto:
       ratio: 1.8
-      max_speed: 0.35
+      max_speed: 0.48
     psi_auto:
       ratio: 2.0
-      max_speed: 0.8
+      max_speed: 1.1
     z_auto:
       ratio: 2.0
-      max_speed: 0.3
+      max_speed: 0.35
       approach_offset: 0.03
 
 joint_state_publisher:
@@ -46,7 +46,7 @@ motor_controller:
     right:
       id: 0x06
       dir: 1
-      Kp: 1.0
+      Kp: 1.5
       max_speed: 10.0
     left:
       id: 0x09
