@@ -12,8 +12,8 @@ world_coord_controller:
         z: 0.04
         psi: 0.05
     xy_auto:
-      ratio: 1.8
-      max_speed: 0.35
+      ratio: 2.0
+      max_speed: 0.45
     psi_auto:
       ratio: 2.0
       max_speed: 0.9
