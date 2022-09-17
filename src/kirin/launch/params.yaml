@@ -73,4 +73,4 @@ hand_tool_manager:
 rapid_hand_controller_node:
   ros__parameters:
     usb_device: 
-      rapid_arduino: usb-Arduino_LLC_Arduino_Nano_Every_8EA397DC51514A4E434B2020FF0B453E-if00
+      rapid_arduino: usb-Arduino_LLC_Arduino_Nano_Every_05456F05515147394A202020FF102657-if00 
