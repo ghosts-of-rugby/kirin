@@ -11,7 +11,7 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
-  field_color = "red"
+  field_color = "blue"
 
   # get urdf and rviz config path
   kirin_package_path = get_package_share_path('kirin')
@@ -23,7 +23,7 @@ def generate_launch_description():
     'params', default=[ThisLaunchFileDir(), '/params.yaml'])
   
   # create the launch configuration variables
-  field = LaunchConfiguration('field', default="red")
+  field = LaunchConfiguration('field', default="blue")
   use_hardware = LaunchConfiguration('use_hardware')
   record = LaunchConfiguration('record')
 
