@@ -35,7 +35,7 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
   if (use_hardware_) {
     std::string pump_usb = declare_parameter("usb_device.pump_arduino", "");
     pump_arduino_uart_
-        = std::make_shared<ddt::Uart>("/dev/" + pump_usb, ddt::Uart::BaudRate::B_115200);
+        = std::make_shared<ddt::Uart>("/dev/serial/by-id/" + pump_usb, ddt::Uart::BaudRate::B_115200);
   } else {
     RCLCPP_WARN(this->get_logger(), "hardware deactivated");
   }
