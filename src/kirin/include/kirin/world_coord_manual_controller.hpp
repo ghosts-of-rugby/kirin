@@ -13,6 +13,7 @@
 #include <kirin_msgs/msg/move_mode.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
 #include <kirin_msgs/srv/set_air_state.hpp>
+#include <kirin_msgs/srv/start_rapid_hand.hpp>
 #include "kirin/joy_controller.hpp"
 #include "kirin/common_types.hpp"
 #include "kirin/frame.hpp"
@@ -122,6 +123,7 @@ class WorldCoordManualController : public JoyController {
   rclcpp::Publisher<kirin_msgs::msg::MoveMode>::SharedPtr move_mode_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
+  rclcpp::Client<kirin_msgs::srv::StartRapidHand>::SharedPtr start_rapid_hand_client_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
@@ -138,6 +140,7 @@ class WorldCoordManualController : public JoyController {
   void TimerCallback();
   void ChangePumpStateClientRequest();
   void ChangeHandStateClientRequest();
+  void StartRapidHandClientRequest();
   void ModeChangeHandler();
 
   std::optional<std::tuple<double, double>> GenerateAutoZVelocity(const std::string& target,

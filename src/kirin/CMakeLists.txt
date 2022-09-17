@@ -45,11 +45,12 @@ function(custom_executable target dir)
   )
 endfunction()
 
-custom_executable(kirin_main_executor       main)
-custom_executable(jagariko_marker_publisher main)
-custom_executable(jsk_visualize_node        main)
-custom_executable(hand_tool_manager_node    main)
-custom_executable(test_motor_controller     main/test)
+custom_executable(kirin_main_executor        main)
+custom_executable(jagariko_marker_publisher  main)
+custom_executable(jsk_visualize_node         main)
+custom_executable(hand_tool_manager_node     main)
+custom_executable(rapid_hand_controller_node main)
+custom_executable(test_motor_controller      main/test)
 
 include_directories(
   include

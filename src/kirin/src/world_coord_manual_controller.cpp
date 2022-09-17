@@ -168,6 +168,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   toggle_hand_state_client_
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
   set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
+  start_rapid_hand_client_ = create_client<kirin_msgs::srv::StartRapidHand>("/start_rapid_hand");
 
   /* publish initial message */
   PublishBellowsMsg(current_bellows_frame_);
@@ -380,6 +381,7 @@ void WorldCoordManualController::InitialAutoMovement() {
       return;
     }
     case InitialAuto::Start: {
+      StartRapidHandClientRequest();
       next_target_    = frame::kInitialDepart;
       current_target_ = frame::kInitialDepart;
       PublishNextTargetMsg(next_target_);
@@ -535,6 +537,21 @@ void WorldCoordManualController::ChangePumpStateClientRequest() {
   };
 
   auto future_result = set_air_state_client_->async_send_request(request, response_callback);
+}
+
+void WorldCoordManualController::StartRapidHandClientRequest() {
+  auto request    = std::make_shared<kirin_msgs::srv::StartRapidHand::Request>();
+  request->value = true;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::StartRapidHand>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response     = future.get();
+    if (!response->result) RCLCPP_ERROR(this->get_logger(), "Failed to Start Rapid Hand!!");
+    // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
+  };
+
+  auto future_result = start_rapid_hand_client_->async_send_request(request, response_callback);
+
 }
 
 void WorldCoordManualController::ModeChangeHandler() {

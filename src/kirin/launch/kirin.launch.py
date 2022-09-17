@@ -111,6 +111,11 @@ def generate_launch_description():
     parameters=[params_file, {'use_hardware': use_hardware}, {'field': field}]
   )
 
+  rapid_hand_controller_node = Node(
+    package='kirin', executable='rapid_hand_controller_node', output='screen',
+    parameters=[params_file, {'use_hardware': use_hardware}]
+  )
+
   jagariko_marker_publiser = Node(
     package='kirin', executable='jagariko_marker_publisher', output='screen',
     parameters=[{'field': field}]
@@ -134,5 +139,6 @@ def generate_launch_description():
     field_frame_publisher,
     rviz_node,
     jagariko_marker_publiser,
+    rapid_hand_controller_node,
     jsk_visualize_node
   ])
