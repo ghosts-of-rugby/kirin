@@ -36,6 +36,26 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
     std::string pump_usb = declare_parameter("usb_device.pump_arduino", "");
     pump_arduino_uart_
         = std::make_shared<ddt::Uart>("/dev/serial/by-id/" + pump_usb, ddt::Uart::BaudRate::B_115200);
+    
+    {
+      pump_arduino_uart_->Send({0x00});
+      std::this_thread::sleep_for(10ms);
+      auto receive = pump_arduino_uart_->Receive();
+      if (receive.size() == 0) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to Receive Data from Arduino");
+        RCLCPP_INFO(this->get_logger(), "Reopen Arduino Port");
+        pump_arduino_uart_->Close();
+        std::this_thread::sleep_for(1ms);
+        pump_arduino_uart_->Open();
+        pump_arduino_uart_->Send({0x00});
+        std::this_thread::sleep_for(10ms);
+        auto receive = pump_arduino_uart_->Receive();
+        if (receive.size() == 0) {
+          RCLCPP_ERROR(this->get_logger(), "Second Trial to Connect Arduino is Failed");
+          rclcpp::shutdown();
+        }
+      }
+    }
   } else {
     RCLCPP_WARN(this->get_logger(), "hardware deactivated");
   }
