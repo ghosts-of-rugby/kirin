@@ -101,10 +101,10 @@
     <parent link="fix_base"/>
     <child link="initial_depart"/>
     <xacro:if value="${field=='red'}">
-      <origin xyz="0.60 -0.65 0.225" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.60 -0.60 0.225" rpy="0.0 0.0 0.0"/>
     </xacro:if>
     <xacro:if value="${field=='blue'}">
-      <origin xyz="0.60 0.65 0.225" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0.60 0.60 0.225" rpy="0.0 0.0 0.0"/>
     </xacro:if>
   </joint>
 

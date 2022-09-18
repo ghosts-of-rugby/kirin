@@ -99,6 +99,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
       z_auto_.enabled      = true;
       z_auto_.state        = ZAutoState::Depart;
       planar_auto_.enabled = true;
+      if (hand_state_ == kirin_types::HandState::Extend) {
+        ChangeHandStateClientRequest();
+      }
       RCLCPP_INFO(this->get_logger(), "Go to depart position");
     }
   });
@@ -107,8 +110,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     z_auto_.enabled = true;
     if (!planar_auto_.enabled) {  // disable to change target during planar movement
       // movement from pick to place or from place to pick is invalid
-      ValidateAndUpdateTarget();
-      current_target_ = next_target_;
+      if (ValidateAndUpdateTarget()) {
+        current_target_ = next_target_;
+      }
     }
     // change z auto state
     if (current_target_ == frame::kDepart) z_auto_.state = ZAutoState::Depart;
@@ -122,8 +126,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
     if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {
       // movement from pick to place or from place to pick is invalid
-      ValidateAndUpdateTarget();
-      current_target_      = next_target_;
+      if (ValidateAndUpdateTarget()) {
+        current_target_ = next_target_;
+      }
       planar_auto_.enabled = true;
       RCLCPP_INFO(this->get_logger(), "planar auto movement start");
     }
@@ -167,7 +172,7 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
-  set_air_state_client_ = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
+  set_air_state_client_    = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
   start_rapid_hand_client_ = create_client<kirin_msgs::srv::StartRapidHand>("/start_rapid_hand");
 
   /* publish initial message */
@@ -181,7 +186,7 @@ WorldCoordManualController::~WorldCoordManualController() {}
 bool WorldCoordManualController::IsAllowedToChangeTarget() {
   double depart_xy_threshold  = 0.3;
   double depart_psi_threshold = 0.2;
-  if (current_target_ == frame::kDepart) {
+  if (kirin_utils::Contain(current_target_, "depart")) {
     if (xy_distance_.has_value() && psi_distance_.has_value()) {
       return (xy_distance_->norm() <= depart_xy_threshold
               && psi_distance_.value() <= depart_psi_threshold);
@@ -391,7 +396,7 @@ void WorldCoordManualController::InitialAutoMovement() {
       return;
     }
     case InitialAuto::GoInitialDepart: {
-      if (!planar_auto_.enabled) {  // when initial depart reached
+      if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {  // when initial depart reached
         next_target_    = frame::kShareWait;
         current_target_ = frame::kShareWait;
         PublishNextTargetMsg(next_target_);
@@ -403,13 +408,14 @@ void WorldCoordManualController::InitialAutoMovement() {
     case InitialAuto::GoShareWait: {
       if (!planar_auto_.enabled) {  // when share waith reached
         initial_auto_ = InitialAuto::WaitRapidFinished;
+        next_target_ = frame::pick::kShare2;
         PublishNextTargetMsg(frame::pick::kShare2);
       }
       return;
     }
     case InitialAuto::WaitRapidFinished: {
       // wait start button pushed
-      PublishNextTargetMsg(frame::pick::kShare2);
+      // PublishNextTargetMsg(frame::pick::kShare2);
       return;
     }
     case InitialAuto::RapidFinished: {
@@ -447,13 +453,16 @@ void WorldCoordManualController::InitialAutoMovement() {
     case InitialAuto::GoDepartZ: {
       if (!z_auto_.enabled) {  // if z movement finished, start xy movement
         planar_auto_.enabled = true;
-        ChangeHandStateClientRequest();
+        if (hand_state_ == kirin_types::HandState::Extend) {
+          ChangeHandStateClientRequest();
+        }
         initial_auto_ = InitialAuto::GoDepartXY;
       }
       return;
     }
     case InitialAuto::GoDepartXY: {
-      if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {  // if planar movement finished, Go place point
+      if (!planar_auto_.enabled
+          || IsAllowedToChangeTarget()) {  // if planar movement finished, Go place point
         current_target_      = frame::place::kShare;
         next_target_         = frame::place::kShare;
         planar_auto_.enabled = true;
@@ -488,6 +497,7 @@ void WorldCoordManualController::InitialAutoMovement() {
       z_auto_.enabled      = true;
       z_auto_.state        = ZAutoState::Depart;
       initial_auto_        = InitialAuto::GoStandby;
+      pick_index           = 2;
       PublishNextTargetMsg(next_target_);
       return;
     }
@@ -540,18 +550,17 @@ void WorldCoordManualController::ChangePumpStateClientRequest() {
 }
 
 void WorldCoordManualController::StartRapidHandClientRequest() {
-  auto request    = std::make_shared<kirin_msgs::srv::StartRapidHand::Request>();
+  auto request   = std::make_shared<kirin_msgs::srv::StartRapidHand::Request>();
   request->value = true;
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::StartRapidHand>::SharedFuture;
   auto response_callback = [this](ResponseFuture future) {
-    auto response     = future.get();
+    auto response = future.get();
     if (!response->result) RCLCPP_ERROR(this->get_logger(), "Failed to Start Rapid Hand!!");
     // RCLCPP_INFO(this->get_logger(), "return : %d", response->current_state.value);
   };
 
   auto future_result = start_rapid_hand_client_->async_send_request(request, response_callback);
-
 }
 
 void WorldCoordManualController::ModeChangeHandler() {
@@ -654,18 +663,22 @@ WorldCoordManualController::GenerateAutoPlaneVelocity(const std::string& target)
   }
 }
 
-void WorldCoordManualController::ValidateAndUpdateTarget() {
+bool WorldCoordManualController::ValidateAndUpdateTarget() {
   if ((kirin_utils::Contain(current_target_, "pick")
        && kirin_utils::Contain(next_target_, "place"))) {
-    next_target_ = frame::kDepart;
+    current_target_ = frame::kDepart;
     RCLCPP_ERROR(this->get_logger(),
                  "move from pick to place directly is invalid! Go through depart position!");
     PublishNextTargetMsg(next_target_);
+    return false;
   } else if (kirin_utils::Contain(current_target_, "place")
              && kirin_utils::Contain(next_target_, "pick")) {
-    next_target_ = frame::kDepart;
+    current_target_ = frame::kDepart;
     RCLCPP_ERROR(this->get_logger(),
                  "move from place to pick directly is invalid! Go through depart position!");
     PublishNextTargetMsg(next_target_);
+    return false;
+  } else {
+    return true;
   }
 }
