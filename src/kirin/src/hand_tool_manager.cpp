@@ -45,7 +45,7 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
         RCLCPP_ERROR(this->get_logger(), "Failed to Receive Data from Arduino");
         RCLCPP_INFO(this->get_logger(), "Reopen Arduino Port");
         pump_arduino_uart_->Close();
-        std::this_thread::sleep_for(1ms);
+        std::this_thread::sleep_for(100ms);
         pump_arduino_uart_->Open();
         pump_arduino_uart_->Send({0x00});
         std::this_thread::sleep_for(10ms);
@@ -54,6 +54,8 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
           RCLCPP_ERROR(this->get_logger(), "Second Trial to Connect Arduino is Failed");
           rclcpp::shutdown();
         }
+      } else {
+        RCLCPP_INFO(this->get_logger(), "Successfully Connected");
       }
     }
   } else {

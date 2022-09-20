@@ -110,9 +110,9 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
     z_auto_.enabled = true;
     if (!planar_auto_.enabled) {  // disable to change target during planar movement
       // movement from pick to place or from place to pick is invalid
-      if (ValidateAndUpdateTarget()) {
-        current_target_ = next_target_;
-      }
+      // if (ValidateAndUpdateTarget()) {
+      //   current_target_ = next_target_;
+      // }
     }
     // change z auto state
     if (current_target_ == frame::kDepart) z_auto_.state = ZAutoState::Depart;
