@@ -64,7 +64,7 @@ class JagarikoMarkersPublisher : public rclcpp::Node {
         place_poses_.at(l) = {base_x + x_distance * (l + 1) * color_dir, base_y, 0.0, yaw};
       }
       place_poses_.at(PLACE_POSE_NUM - 1)
-          = {base_x + x_distance * 3 * color_dir, base_y, jagariko_height, 0.0};
+          = {base_x + x_distance * 4 * color_dir, base_y, jagariko_height, 0.0};
     }
 
     /* create pick target transform */
