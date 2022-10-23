@@ -93,7 +93,7 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
       {kirin_types::BellowsName::ExRight, kirin_types::AirState::Off},
   };
 
-  marker_pub_   = create_publisher<Marker>("hand_marker", rclcpp::SystemDefaultsQoS());
+  marker_pub_   = create_publisher<Marker>("hand_marker", rclcpp::QoS(rclcpp::KeepLast(5)));
   timer_        = create_wall_timer(10ms, marker_timer_callback_);
   set_hand_srv_ = create_service<SetHandState>("tool/set_hand_state", handle_set_hand_state_);
   toggle_hand_srv_
