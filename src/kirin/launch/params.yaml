@@ -1,16 +1,10 @@
-world_coord_controller:
+robot_joint_state_generator:
   ros__parameters:
     velocity_ratio:
-      normal:
-        x: 0.2
-        y: 0.2
-        z: 0.1
-        psi: 0.3
-      adjust:
-        x: 0.05
-        y: 0.05
-        z: 0.04
-        psi: 0.05
+      x: 0.2
+      y: 0.2
+      z: 0.1
+      psi: 0.3
     xy_auto:
       ratio: 2.0
       max_speed: 0.45
@@ -21,6 +15,9 @@ world_coord_controller:
       ratio: 2.0
       max_speed: 0.35
       approach_offset: 0.03
+
+# world_coord_controller:
+#   ros__parameters:
 
 joint_state_publisher:
   ros__parameters:
