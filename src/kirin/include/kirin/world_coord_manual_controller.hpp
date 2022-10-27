@@ -18,33 +18,15 @@
 #include "kirin/common_types.hpp"
 #include "kirin/frame.hpp"
 
-using RPYTuple = std::tuple<double, double, double>;
 
-template <typename T>
-int sgn(T val) {
-  return (T(0) < val) - (val < T(0));
-}
 
 class WorldCoordManualController : public JoyController {
  public:
-  using PlaneTuple = std::tuple<Eigen::Vector2d, double>;
-  struct VelocityRatio {
-    double x;
-    double y;
-    double z;
-    double psi;
-  };
-
-  enum class ZAutoState {
-    Approach,
-    Depart
-  };
-
+  using ZAutoState = kirin_types::ZAutoState;
   enum class InitialAuto {
     Wait,
     Start,
-    GoInitialDepart,
-    GoShareWait,
+    WaitGoShareWait,
     WaitRapidFinished,
     RapidFinished,
     GoShare,
@@ -60,22 +42,6 @@ class WorldCoordManualController : public JoyController {
     End
   };
 
-  struct ZAuto {
-    bool enabled     = false;
-    ZAutoState state = ZAutoState::Depart;
-    double ratio;
-    double max_speed;
-    double approach_offset;
-  };
-
-  struct PlanarAuto {
-    bool enabled = false;
-    double xy_ratio;
-    double xy_max_speed;
-    double psi_ratio;
-    double psi_max_speed;
-  };
-
   explicit WorldCoordManualController(const std::string& node_name,
                                       const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
   ~WorldCoordManualController();
@@ -84,25 +50,11 @@ class WorldCoordManualController : public JoyController {
   bool is_red_;
   int color_dir_;
   const std::string joy_topic_name_{"joy"};
-  const std::string input_topic_name_{"world_coord_pose"};
   std::function<void()> timer_callback_;
-  Eigen::Vector3d initial_pos_;
-  Eigen::Vector3d pos_;
-  Eigen::Vector3d vel_;
-  double initial_psi_;
-  double psi_;
-  double dpsi_;
   int loop_ms_{20};
-  std::string current_bellows_frame_;
-  VelocityRatio velocity_ratio_normal_;
-  VelocityRatio velocity_ratio_adjust_;
   InitialAuto initial_auto_{InitialAuto::Wait};
-  ZAuto z_auto_;
-  PlanarAuto planar_auto_;
   bool is_air_on_{false};
-
-  std::optional<Eigen::Vector2d> xy_distance_;
-  std::optional<double> psi_distance_;
+  ZAutoState z_auto_state;
 
   int pick_index{0};
   const int pick_max_index{frame::pick::kNum};
@@ -111,45 +63,34 @@ class WorldCoordManualController : public JoyController {
   std::array<std::string, frame::pick::kNum + 1> pick_target_;
   std::array<std::string, frame::place::kNum + 1> place_target_;
   std::string next_target_{frame::kDepart};
-  std::string current_target_{frame::kDepart};
 
   kirin_types::HandState hand_state_;
   kirin_types::MoveMode move_mode_;
 
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr current_bellows_pub_, next_target_pub_,
       all_state_msg_pub_;
   rclcpp::Publisher<kirin_msgs::msg::MoveMode>::SharedPtr move_mode_pub_;
   rclcpp::Client<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_state_client_;
   rclcpp::Client<kirin_msgs::srv::SetAirState>::SharedPtr set_air_state_client_;
   rclcpp::Client<kirin_msgs::srv::StartRapidHand>::SharedPtr start_rapid_hand_client_;
-  std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  inline geometry_msgs::msg::Pose GetManualPose();
-  inline std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
-                                                               const std::string& child_frame);
-  inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
-  bool IsAllowedToChangeTarget();
   void InitialAutoMovement();
+  void InitialAutoMovementPlan();
   void TimerCallback();
   void ChangePumpStateClientRequest();
   void ChangeHandStateClientRequest();
   void StartRapidHandClientRequest();
   void ModeChangeHandler();
 
-  std::optional<std::tuple<double, double>> GenerateAutoZVelocity(const std::string& target,
-                                                                  double offset);
-  std::optional<std::tuple<PlaneTuple, PlaneTuple>> GenerateAutoPlaneVelocity(
-      const std::string& target);
-  bool ValidateAndUpdateTarget();
-
   void PublishBellowsMsg(const std::string& bellows);
   void PublishModeMsg(const kirin_types::MoveMode& mode);
   void PublishNextTargetMsg(const std::string& next_target);
   void PublishAllStateMsg();
+
+  bool SetNextTarget(const std::string& next_target);
+  bool StartZAutoMovement(const kirin_types::ZAutoState& state);
+  bool StartPlanarMovement();
 };
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_HAND_COORD_CONTROLLER */

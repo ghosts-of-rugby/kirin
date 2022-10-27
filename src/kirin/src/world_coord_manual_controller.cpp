@@ -15,46 +15,11 @@ using namespace std::chrono_literals;
 WorldCoordManualController::WorldCoordManualController(const std::string& node_name,
                                                        const rclcpp::NodeOptions& options)
     : JoyController(node_name, options),
-      initial_pos_(machine::kRedInitialPosX, machine::kRedInitialPosY, machine::kRedInitialPosZ),
-      pos_(initial_pos_),
-      vel_(0.0, 0.0, 0.0),
-      initial_psi_(machine::kRedInitialPsi),
-      psi_(initial_psi_),
-      dpsi_(0.0),
-      current_bellows_frame_{frame::kBellowsTop},
       move_mode_{kirin_types::MoveMode::Manual},
       timer_callback_(std::bind(&WorldCoordManualController::TimerCallback, this)) {
   /* color direction from field */
   is_red_    = declare_parameter("field", "blue") == "red";
   color_dir_ = is_red_ ? -1.0 : 1.0;
-  if (!is_red_) {  // if blue, fix initial position
-    pos_.y()         = -1.0 * pos_.y();
-    psi_             = -1.0 * psi_;
-    initial_pos_.y() = -1.0 * initial_pos_.y();
-    initial_psi_     = -1.0 * initial_psi_;
-  }
-
-  /* get parameter */
-  velocity_ratio_normal_ = {.x   = declare_parameter("velocity_ratio.normal.x", 0.0),
-                            .y   = declare_parameter("velocity_ratio.normal.y", 0.0),
-                            .z   = declare_parameter("velocity_ratio.normal.z", 0.0),
-                            .psi = declare_parameter("velocity_ratio.normal.psi", 0.0)};
-  velocity_ratio_adjust_ = {.x   = declare_parameter("velocity_ratio.adjust.x", 0.0),
-                            .y   = declare_parameter("velocity_ratio.adjust.y", 0.0),
-                            .z   = declare_parameter("velocity_ratio.adjust.z", 0.0),
-                            .psi = declare_parameter("velocity_ratio.adjust.psi", 0.0)};
-
-  z_auto_      = {.ratio           = declare_parameter("z_auto.ratio", 2.0),
-                  .max_speed       = declare_parameter("z_auto.max_speed", 0.3),
-                  .approach_offset = declare_parameter("z_auto.approach_offset", 0.05)};
-  planar_auto_ = {.xy_ratio      = declare_parameter("xy_auto.ratio", 2.0),
-                  .xy_max_speed  = declare_parameter("xy_auto.max_speed", 0.3),
-                  .psi_ratio     = declare_parameter("psi_auto.ratio", 2.0),
-                  .psi_max_speed = declare_parameter("psi_auto.max_speed", 0.3)};
-
-  // transform listener
-  tf_buffer_          = std::make_shared<tf2_ros::Buffer>(this->get_clock());
-  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   {
     // wait transform published from robot_state_publiser and hand_tool_manager
@@ -92,45 +57,33 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   });
 
   this->RegisterButtonPressedCallback(Button::Home, [this]() -> void {
-    // if robot is not in auto movement and pump is not on
-    if (!planar_auto_.enabled || !z_auto_.enabled) {
-      next_target_         = frame::kDepart;
-      current_target_      = frame::kDepart;
-      z_auto_.enabled      = true;
-      z_auto_.state        = ZAutoState::Depart;
-      planar_auto_.enabled = true;
-      if (hand_state_ == kirin_types::HandState::Extend) {
-        ChangeHandStateClientRequest();
-      }
-      RCLCPP_INFO(this->get_logger(), "Go to depart position");
+    if (!SetNextTarget(frame::kDepart)) return;
+    StartZAutoMovement(ZAutoState::Depart);
+    StartPlanarMovement();
+    if (hand_state_ == kirin_types::HandState::Extend) {
+      ChangeHandStateClientRequest();
     }
+    RCLCPP_INFO(this->get_logger(), "Go to depart position");
   });
 
   this->RegisterButtonPressedCallback(Button::RB, [this]() -> void {
-    z_auto_.enabled = true;
-    if (!planar_auto_.enabled) {  // disable to change target during planar movement
-      // movement from pick to place or from place to pick is invalid
-      // if (ValidateAndUpdateTarget()) {
-      //   current_target_ = next_target_;
-      // }
+    ZAutoState next_z_auto_state
+        = (z_auto_state == ZAutoState::Approach) ? ZAutoState::Depart : ZAutoState::Approach;
+    if (StartZAutoMovement(next_z_auto_state)) {
+      RCLCPP_INFO(this->get_logger(), "Z automatic movement start");
+    } else {
+      RCLCPP_ERROR(this->get_logger(),
+                   "Z automatic movement cannot start or robot is already moving");
     }
-    // change z auto state
-    if (current_target_ == frame::kDepart) z_auto_.state = ZAutoState::Depart;
-    else {
-      if (z_auto_.state == ZAutoState::Approach) z_auto_.state = ZAutoState::Depart;
-      else z_auto_.state = ZAutoState::Approach;
-    }
-    RCLCPP_INFO(this->get_logger(), "Z auto movement start");
   });
 
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
-    if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {
-      // movement from pick to place or from place to pick is invalid
-      if (ValidateAndUpdateTarget()) {
-        current_target_ = next_target_;
-      }
-      planar_auto_.enabled = true;
-      RCLCPP_INFO(this->get_logger(), "planar auto movement start");
+    if (!SetNextTarget(next_target_)) return;
+    if (StartPlanarMovement()) {
+      RCLCPP_INFO(this->get_logger(), "Planar automatic movement start");
+    } else {
+      RCLCPP_ERROR(this->get_logger(),
+                   "Planar automatic movement cannot start or robot is already moving");
     }
   });
 
@@ -163,8 +116,6 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   //   Button::X, std::bind(&WorldCoordManualController::ChangeBellows, this));
 
   rclcpp::QoS qos(rclcpp::KeepLast(10));
-  world_coord_pub_     = create_publisher<geometry_msgs::msg::PoseStamped>(input_topic_name_, qos);
-  joint_pub_           = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
   current_bellows_pub_ = create_publisher<std_msgs::msg::String>("current_bellows_frame", qos);
   next_target_pub_     = create_publisher<std_msgs::msg::String>("next_target", qos);
   all_state_msg_pub_   = create_publisher<std_msgs::msg::String>("all_state", qos);
@@ -176,69 +127,43 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   start_rapid_hand_client_ = create_client<kirin_msgs::srv::StartRapidHand>("/start_rapid_hand");
 
   /* publish initial message */
-  PublishBellowsMsg(current_bellows_frame_);
   PublishModeMsg(move_mode_);
   PublishNextTargetMsg(next_target_);
 }
 
 WorldCoordManualController::~WorldCoordManualController() {}
 
-void WorldCoordManualController::PublishJointState(double l, double phi_offset) {
-  auto joint_state  = std::make_unique<sensor_msgs::msg::JointState>();
-  joint_state->name = {"theta_joint", "z_joint", "r_joint", "phi_joint", "phi_extend_joint"};
-
-  /*  Offset between joint displacement and absolute position in the joint coordinate system */
-  double r_offset = machine::kROffsetCenterToRRoot + machine::kROffsetRRootToPhi;
-  double z_offset = initial_pos_.z() - machine::kZOffsetInitialDisplacement;
-
-  /* calculate absolute position in the joint coordinate */
-  double r     = model::CalcR(l, pos_.x(), pos_.y(), psi_);
-  double theta = model::CalcTheta(l, pos_.x(), pos_.y(), psi_);
-  double phi   = model::CalcPhi(l, pos_.x(), pos_.y(), psi_);
-
-  double dr     = model::CalcRVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dtheta = model::CalcThetaVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-  double dphi   = model::CalcPhiVel(l, vel_.x(), vel_.y(), dpsi_, r, theta, phi);
-
-  /* calculate joint displacement */
-  joint_state->position
-      = {theta, pos_.z() - z_offset, r - r_offset, phi - phi_offset, phi - phi_offset};
-  joint_state->velocity = {dtheta, vel_.z(), dr, dphi, dphi};
-  joint_pub_->publish(std::move(joint_state));
-}
-
 void WorldCoordManualController::TimerCallback() {
   /* InitialAutoMovement */
   if (initial_auto_ != InitialAuto::End) {
     InitialAutoMovement();
   }
-
-  // calculate length from base to current bellows
-  auto&& bellows_in_phi_link = GetPoseFromTf(frame::kPhiLink, current_bellows_frame_);
-  double l, phi_offset;
-  if (bellows_in_phi_link) {
-    double x   = bellows_in_phi_link.value().position.x;
-    double y   = bellows_in_phi_link.value().position.y;
-    l          = sqrt(x * x + y * y);
-    phi_offset = atan2(y, x);
-  } else {
-    return;
-  }
-
-  auto input_pose = std::make_unique<geometry_msgs::msg::PoseStamped>();
-
-  input_pose->header.frame_id = frame::kFixBase;
-  input_pose->header.stamp    = get_clock()->now();
-  input_pose->pose            = GetManualPose();
-  world_coord_pub_->publish(std::move(input_pose));
-
-  PublishJointState(l, phi_offset);
-
   // publish all state
   PublishAllStateMsg();
 }
 
+void WorldCoordManualController::InitialAutoMovementPlan() {
+  PublishNextTargetMsg(frame::kInitialDepart);
+  // WaitForStart
+
+  while (!SetNextTarget(frame::kShareWait)) { // wait for finish auto movement
+    std::this_thread::sleep_for(100ms);
+  }
+
+  SetNextTarget(frame::kShareWait);
+  StartPlanarMovement();
+  StartZAutoMovement(ZAutoState::Approach);
+  PublishNextTargetMsg(frame::kShareWait);
+  // WaitForStop
+  PublishNextTargetMsg(frame::pick::kShare2);
+  
+  // WaitForButtonPushed
+  SetNextTarget()
+}
+
 void WorldCoordManualController::InitialAutoMovement() {
+
+
   switch (initial_auto_) {
     case InitialAuto::Wait: {
       // wait start button pushed
@@ -247,29 +172,13 @@ void WorldCoordManualController::InitialAutoMovement() {
     }
     case InitialAuto::Start: {
       StartRapidHandClientRequest();
-      next_target_    = frame::kInitialDepart;
-      current_target_ = frame::kInitialDepart;
-      PublishNextTargetMsg(next_target_);
-      planar_auto_.enabled = true;
-      z_auto_.enabled      = true;
-      initial_auto_        = InitialAuto::GoInitialDepart;
-      return;
-    }
-    case InitialAuto::GoInitialDepart: {
-      if (!planar_auto_.enabled || IsAllowedToChangeTarget()) {  // when initial depart reached
-        next_target_    = frame::kShareWait;
-        current_target_ = frame::kShareWait;
-        PublishNextTargetMsg(next_target_);
-        planar_auto_.enabled = true;
-        initial_auto_        = InitialAuto::GoShareWait;
-      }
-      return;
-    }
-    case InitialAuto::GoShareWait: {
-      if (!planar_auto_.enabled) {  // when share waith reached
-        initial_auto_ = InitialAuto::WaitRapidFinished;
-        next_target_ = frame::pick::kShare2;
+      PublishNextTargetMsg(frame::kShareWait);
+      SetNextTarget(frame::kShareWait);
+      StartPlanarMovement();
+      StartZAutoMovement(ZAutoState::Approach);
+      if (false) /* auto movement finished */ {
         PublishNextTargetMsg(frame::pick::kShare2);
+        initial_auto_        = InitialAuto::WaitRapidFinished;
       }
       return;
     }
@@ -465,7 +374,7 @@ void WorldCoordManualController::PublishAllStateMsg() {
 
   // zauto
   std::string z_auto_msg = "(Button [RB]) ZAutoState : ";
-  z_auto_msg += magic_enum::enum_name(z_auto_.state);
+  z_auto_msg += magic_enum::enum_name(z_auto_state);
 
   // initial auto movement
   std::string initial_auto_msg = "Initial Auto: ";
@@ -474,71 +383,4 @@ void WorldCoordManualController::PublishAllStateMsg() {
   std_msgs::msg::String msg;
   msg.data = pump_msg + "\n" + hand_msg + "\n" + z_auto_msg + "\n\n" + initial_auto_msg;
   all_state_msg_pub_->publish(std::move(msg));
-}
-
-std::optional<std::tuple<double, double>> WorldCoordManualController::GenerateAutoZVelocity(
-    const std::string& target, double offset) {
-  auto pose = GetPoseFromTf(current_bellows_frame_, target);
-  if (pose.has_value()) {
-    double z_distance  = pose.value().position.z;
-    double input_z_vel = z_auto_.ratio * (z_distance - sgn(z_distance) * offset);
-    return std::tie(std::clamp(input_z_vel, -z_auto_.max_speed, z_auto_.max_speed), z_distance);
-  } else {
-    return std::nullopt;
-  }
-}
-
-using PlaneTuple = WorldCoordManualController::PlaneTuple;
-std::optional<std::tuple<PlaneTuple, PlaneTuple>>
-WorldCoordManualController::GenerateAutoPlaneVelocity(const std::string& target) {
-  // bellowsから見たtargetの距離を計算
-  auto distance         = GetPoseFromTf(current_bellows_frame_, target);
-  // コントローラーの速度入力はロボット座標系でのxyなので入力の回転変換用のPoseを取得
-  auto bellows_in_robot = GetPoseFromTf(frame::kFixBase, current_bellows_frame_);
-  if (distance.has_value() && bellows_in_robot.has_value()) {
-    Eigen::Vector2d xy_distance;
-    {
-      auto&& xy_distance_in_bellows
-          = Eigen::Vector2d(distance.value().position.x, distance.value().position.y);
-      auto [r_tmp, p_tmp, yaw_bellows_in_robot]
-          = CalcGeometryQuatToRPY(bellows_in_robot.value().orientation);
-      Eigen::Rotation2Dd rot(yaw_bellows_in_robot);
-      xy_distance = rot.matrix() * xy_distance_in_bellows;
-    }
-
-    auto [roll, pitch, psi_distance] = CalcGeometryQuatToRPY(distance.value().orientation);
-
-    auto&& input_xy_vel   = planar_auto_.xy_ratio * xy_distance;
-    double input_psi_vel  = planar_auto_.psi_ratio * psi_distance;
-    auto&& clamped_xy_vel = Eigen::Vector2d(
-        std::clamp(input_xy_vel.x(), -planar_auto_.xy_max_speed, planar_auto_.xy_max_speed),
-        std::clamp(input_xy_vel.y(), -planar_auto_.xy_max_speed, planar_auto_.xy_max_speed));
-    double clamped_psi_vel
-        = std::clamp(input_psi_vel, -planar_auto_.psi_max_speed, planar_auto_.psi_max_speed);
-    PlaneTuple vel_tuple      = std::tie(clamped_xy_vel, clamped_psi_vel);
-    PlaneTuple distance_tuple = std::tie(xy_distance, psi_distance);
-    return std::tie(vel_tuple, distance_tuple);
-  } else {
-    return std::nullopt;
-  }
-}
-
-bool WorldCoordManualController::ValidateAndUpdateTarget() {
-  if ((kirin_utils::Contain(current_target_, "pick")
-       && kirin_utils::Contain(next_target_, "place"))) {
-    current_target_ = frame::kDepart;
-    RCLCPP_ERROR(this->get_logger(),
-                 "move from pick to place directly is invalid! Go through depart position!");
-    PublishNextTargetMsg(next_target_);
-    return false;
-  } else if (kirin_utils::Contain(current_target_, "place")
-             && kirin_utils::Contain(next_target_, "pick")) {
-    current_target_ = frame::kDepart;
-    RCLCPP_ERROR(this->get_logger(),
-                 "move from place to pick directly is invalid! Go through depart position!");
-    PublishNextTargetMsg(next_target_);
-    return false;
-  } else {
-    return true;
-  }
 }
