@@ -20,6 +20,10 @@ bool Contain(const std::basic_string<T>& str, const U& v) {
   return str.find(v) != std::basic_string<T>::npos;
 }
 
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
 }
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_UTILS */
