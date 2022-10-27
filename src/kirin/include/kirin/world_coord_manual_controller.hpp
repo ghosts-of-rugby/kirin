@@ -134,9 +134,6 @@ class WorldCoordManualController : public JoyController {
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
   bool IsAllowedToChangeTarget();
   void InitialAutoMovement();
-  void SetCurrentBellows(const std::string& bellows_frame);
-  void ChangeBellows();
-  void PublishJointState(double l, double phi_offset);
   void TimerCallback();
   void ChangePumpStateClientRequest();
   void ChangeHandStateClientRequest();
