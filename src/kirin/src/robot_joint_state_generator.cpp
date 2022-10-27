@@ -49,22 +49,35 @@ RobotJointStateGenerator::RobotJointStateGenerator(const rclcpp::NodeOptions& op
                      .psi_ratio     = declare_parameter("psi_auto.ratio", 2.0),
                      .psi_max_speed = declare_parameter("psi_auto.max_speed", 0.3)};
 
+  tf_buffer_          = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+  transform_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
   rclcpp::QoS qos(rclcpp::KeepLast(10));
   world_coord_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>("world_coord_pose", qos);
   joint_pub_       = create_publisher<sensor_msgs::msg::JointState>("manual_joint", qos);
-  set_target_srv_  = create_service<SetTarget>(
-      "generator/set_target", std::bind(&RobotJointStateGenerator::HandleSetTarget, this));
+  planar_fin_pub_  = create_publisher<std_msgs::msg::Bool>("planar_finished", qos);
+  z_fin_pub_       = create_publisher<std_msgs::msg::Bool>("z_finished", qos);
+  manual_vel_sub_  = create_subscription<kirin_msgs::msg::HandPosition>(
+      "manual_velocity", qos,
+      std::bind(&RobotJointStateGenerator::ReceiveManualInput, this, std::placeholders::_1));
+  set_target_srv_ = create_service<SetTarget>(
+      "generator/set_target",
+      std::bind(&RobotJointStateGenerator::HandleSetTarget, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3));
   start_z_srv_ = create_service<StartZAuto>(
       "generator/start_z_auto",
-      std::bind(&RobotJointStateGenerator::HandleStartZAutoMovement, this));
+      std::bind(&RobotJointStateGenerator::HandleStartZAutoMovement, this, std::placeholders::_1,
+                std::placeholders::_2, std::placeholders::_3));
   start_planar_srv_ = create_service<StartPlanarAuto>(
       "generator/start_planar_auto",
-      std::bind(&RobotJointStateGenerator::HandleStartPlanarAutoMovement, this));
-  timer_ = create_wall_timer(std::chrono::microseconds(static_cast<int64_t>(loop_ms_ * 1000)),
+      std::bind(&RobotJointStateGenerator::HandleStartPlanarAutoMovement, this,
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  timer_ = create_wall_timer(std::chrono::milliseconds(20),
                              std::bind(&RobotJointStateGenerator::TimerCallback, this));
 }
 
 RobotJointStateGenerator::~RobotJointStateGenerator() {}
+
 void RobotJointStateGenerator::HandleSetTarget(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<SetTarget::Request> request,
@@ -133,14 +146,15 @@ bool RobotJointStateGenerator::IsAllowedToChangeTarget() {
   }
 }
 
-void RobotJointStateGenerator::ReceiveManualInput(const HandPosition& manual_vel) {
+void RobotJointStateGenerator::ReceiveManualInput(
+    const kirin_msgs::msg::HandPosition::UniquePtr manual_vel) {
   if (!z_auto_.enabled) {                   // z manual
-    vel_.point.z() = manual_vel.point.z();  // receive z vel
+    vel_.point.z() = manual_vel->point.z * velocity_ratio_.z;  // receive z vel
   }
   if (!planar_auto_.enabled) {  // planar manual
-    vel_.point.x() = manual_vel.point.x();
-    vel_.point.y() = manual_vel.point.y();
-    vel_.psi       = manual_vel.psi;
+    vel_.point.x() = manual_vel->point.x * velocity_ratio_.x;
+    vel_.point.y() = manual_vel->point.y * velocity_ratio_.y;
+    vel_.psi       = manual_vel->psi * velocity_ratio_.psi;
   }
 }
 
@@ -338,7 +352,25 @@ bool RobotJointStateGenerator::ValidateAndUpdateTarget() {
   }
 }
 
+void RobotJointStateGenerator::PublishPlanarFinished() {
+  auto msg  = std::make_unique<std_msgs::msg::Bool>();
+  msg->data = true;
+  planar_fin_pub_->publish(std::move(msg));
+}
+
+void RobotJointStateGenerator::PublishZFinished() {
+  auto msg  = std::make_unique<std_msgs::msg::Bool>();
+  msg->data = true;
+  z_fin_pub_->publish(std::move(msg));
+}
+
 void RobotJointStateGenerator::StartZAutoMovement() { z_auto_.enabled = true; }
-void RobotJointStateGenerator::FinishZAutoMovement() { z_auto_.enabled = false; }
+void RobotJointStateGenerator::FinishZAutoMovement() {
+  z_auto_.enabled = false;
+  PublishZFinished();
+}
 void RobotJointStateGenerator::StartPlanarAutoMovement() { planar_auto_.enabled = true; }
-void RobotJointStateGenerator::FinishPlanarAutoMovement() { planar_auto_.enabled = false; }
+void RobotJointStateGenerator::FinishPlanarAutoMovement() {
+  planar_auto_.enabled = false;
+  PublishPlanarFinished();
+}

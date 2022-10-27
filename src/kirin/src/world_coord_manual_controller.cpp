@@ -40,19 +40,23 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   this->RegisterButtonPressedCallback(
       Button::A, std::bind(&WorldCoordManualController::ChangePumpStateClientRequest, this));
 
-  // this->RegisterButtonPressedCallback(
-  //     Button::Home, std::bind(&WorldCoordManualController::ModeChangeHandler, this));
   this->RegisterButtonPressedCallback(Button::Start, [this]() -> void {
     // initial auto movement start
-    if (initial_auto_ == InitialAuto::Wait) {
-      initial_auto_ = InitialAuto::Start;
-      RCLCPP_INFO(this->get_logger(), "Start Initial Auto Movement");
-    } else if (initial_auto_ == InitialAuto::WaitRapidFinished) {
-      initial_auto_ = InitialAuto::RapidFinished;
-    } else if (initial_auto_ == InitialAuto::WaitPicked) {
-      initial_auto_ = InitialAuto::Picked;
-    } else if (initial_auto_ == InitialAuto::WaitPlaceAdjustment) {
-      if (!is_air_on_) initial_auto_ = InitialAuto::AdjustmentCompleted;
+    switch (initial_auto_) {
+      case InitialAuto::Wait: {
+        GoNextInitialAuto();
+        RCLCPP_INFO(this->get_logger(), "Start Initial Auto Movement");
+        break;
+      }
+      case InitialAuto::WaitRapidFinished:
+      case InitialAuto::WaitPicked:
+      case InitialAuto::WaitPlaceAdjustment: {
+        GoNextInitialAuto();
+        break;
+      }
+      default: {
+        break;
+      }
     }
   });
 
@@ -120,11 +124,23 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
   next_target_pub_     = create_publisher<std_msgs::msg::String>("next_target", qos);
   all_state_msg_pub_   = create_publisher<std_msgs::msg::String>("all_state", qos);
   move_mode_pub_       = create_publisher<kirin_msgs::msg::MoveMode>("move_mode", qos);
-  timer_               = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
+  manual_vel_pub_      = create_publisher<kirin_msgs::msg::HandPosition>("manual_velocity", qos);
+  z_fin_sub_           = create_subscription<std_msgs::msg::Bool>(
+      "z_finished", qos,
+      std::bind(&WorldCoordManualController::ZFinishedCallback, this, std::placeholders::_1));
+  planar_fin_sub_ = create_subscription<std_msgs::msg::Bool>(
+      "planar_finished", qos,
+      std::bind(&WorldCoordManualController::PlanarFinishedCallback, this, std::placeholders::_1));
+  timer_ = create_wall_timer(std::chrono::milliseconds(loop_ms_), timer_callback_);
   toggle_hand_state_client_
       = create_client<kirin_msgs::srv::ToggleHandState>("tool/toggle_hand_state");
   set_air_state_client_    = create_client<kirin_msgs::srv::SetAirState>("tool/set_air_state");
   start_rapid_hand_client_ = create_client<kirin_msgs::srv::StartRapidHand>("/start_rapid_hand");
+  set_target_client_       = create_client<kirin_msgs::srv::SetTarget>("generator/set_target");
+  start_planar_auto_client_
+      = create_client<kirin_msgs::srv::StartPlanarAutoMovement>("generator/start_planar_auto");
+  start_z_auto_client_
+      = create_client<kirin_msgs::srv::StartZAutoMovement>("generator/start_z_auto");
 
   /* publish initial message */
   PublishModeMsg(move_mode_);
@@ -138,32 +154,13 @@ void WorldCoordManualController::TimerCallback() {
   if (initial_auto_ != InitialAuto::End) {
     InitialAutoMovement();
   }
+  PublishManualInput();
+
   // publish all state
   PublishAllStateMsg();
 }
 
-void WorldCoordManualController::InitialAutoMovementPlan() {
-  PublishNextTargetMsg(frame::kInitialDepart);
-  // WaitForStart
-
-  while (!SetNextTarget(frame::kShareWait)) { // wait for finish auto movement
-    std::this_thread::sleep_for(100ms);
-  }
-
-  SetNextTarget(frame::kShareWait);
-  StartPlanarMovement();
-  StartZAutoMovement(ZAutoState::Approach);
-  PublishNextTargetMsg(frame::kShareWait);
-  // WaitForStop
-  PublishNextTargetMsg(frame::pick::kShare2);
-  
-  // WaitForButtonPushed
-  SetNextTarget()
-}
-
 void WorldCoordManualController::InitialAutoMovement() {
-
-
   switch (initial_auto_) {
     case InitialAuto::Wait: {
       // wait start button pushed
@@ -176,109 +173,85 @@ void WorldCoordManualController::InitialAutoMovement() {
       SetNextTarget(frame::kShareWait);
       StartPlanarMovement();
       StartZAutoMovement(ZAutoState::Approach);
-      if (false) /* auto movement finished */ {
-        PublishNextTargetMsg(frame::pick::kShare2);
-        initial_auto_        = InitialAuto::WaitRapidFinished;
-      }
+      GoNextInitialAuto();
       return;
     }
     case InitialAuto::WaitRapidFinished: {
+      SetNextInitialAutoCallback([this]() -> void {
+        SetNextTarget(frame::pick::kShare2);
+        PublishNextTargetMsg(frame::pick::kShare2);
+        StartPlanarMovement();
+        StartZAutoMovement(ZAutoState::Approach);
+        ChangeHandStateClientRequest();
+      });
       // wait start button pushed
-      // PublishNextTargetMsg(frame::pick::kShare2);
-      return;
-    }
-    case InitialAuto::RapidFinished: {
-      next_target_    = frame::pick::kShare2;
-      current_target_ = frame::pick::kShare2;
-      PublishNextTargetMsg(next_target_);
-      planar_auto_.enabled = true;
-      z_auto_.enabled      = true;
-      z_auto_.state        = ZAutoState::Approach;
-      ChangeHandStateClientRequest();
-      initial_auto_ = InitialAuto::GoShare;
       return;
     }
     case InitialAuto::GoShare: {
-      if (!planar_auto_.enabled && !z_auto_.enabled) {
-        next_target_ = frame::kDepart;
-        PublishNextTargetMsg(next_target_);
-        ChangePumpStateClientRequest();
-        initial_auto_ = InitialAuto::WaitPicked;
+      if (AutomaticMovementFinished()) {
+        GoNextInitialAuto();
       }
       return;
     }
     case InitialAuto::WaitPicked: {
+      SetNextInitialAutoCallback([this]() -> void { StartZAutoMovement(ZAutoState::Depart); });
       // wait start button pressed
       return;
     }
-    case InitialAuto::Picked: {
-      // when start button pressed
-      z_auto_.enabled = true;
-      z_auto_.state   = ZAutoState::Depart;
-      current_target_ = frame::kDepart;
-      initial_auto_   = InitialAuto::GoDepartZ;
-      return;
-    }
-    case InitialAuto::GoDepartZ: {
-      if (!z_auto_.enabled) {  // if z movement finished, start xy movement
-        planar_auto_.enabled = true;
+    case InitialAuto::ZDepart: {
+      if (AutomaticMovementFinished()) {
         if (hand_state_ == kirin_types::HandState::Extend) {
           ChangeHandStateClientRequest();
         }
-        initial_auto_ = InitialAuto::GoDepartXY;
-      }
-      return;
-    }
-    case InitialAuto::GoDepartXY: {
-      if (!planar_auto_.enabled
-          || IsAllowedToChangeTarget()) {  // if planar movement finished, Go place point
-        current_target_      = frame::place::kShare;
-        next_target_         = frame::place::kShare;
-        planar_auto_.enabled = true;
-        initial_auto_        = InitialAuto::GoPlaceAbove;
-        PublishNextTargetMsg(next_target_);
+        SetNextTarget(frame::place::kShare);
+        StartPlanarMovement();
+        GoNextInitialAuto();
       }
       return;
     }
     case InitialAuto::GoPlaceAbove: {
-      if (!planar_auto_.enabled) {
-        z_auto_.enabled = true;
-        z_auto_.state   = ZAutoState::Approach;
-        initial_auto_   = InitialAuto::GoPlaceHeight;
+      if (AutomaticMovementFinished()) {
+        StartZAutoMovement(ZAutoState::Approach);
+        GoNextInitialAuto();
       }
       return;
     }
     case InitialAuto::GoPlaceHeight: {
-      if (!z_auto_.enabled) {
-        initial_auto_ = InitialAuto::WaitPlaceAdjustment;
+      if (AutomaticMovementFinished()) {
+        GoNextInitialAuto();
       }
       return;
     }
     case InitialAuto::WaitPlaceAdjustment: {
       // wait button pushed
+      SetNextInitialAutoCallback([this]() -> void {
+        next_target_ = frame::kDepart;
+        SetNextTarget(frame::kDepart);
+        PublishNextTargetMsg(frame::kDepart);
+        StartPlanarMovement();
+        StartZAutoMovement(ZAutoState::Depart);
+        pick_index = 2;
+      });
       return;
     }
     case InitialAuto::AdjustmentCompleted: {
       // when button pushed
-      current_target_      = frame::kDepart;
-      next_target_         = frame::kDepart;
-      planar_auto_.enabled = true;
-      z_auto_.enabled      = true;
-      z_auto_.state        = ZAutoState::Depart;
-      initial_auto_        = InitialAuto::GoStandby;
-      pick_index           = 2;
-      PublishNextTargetMsg(next_target_);
-      return;
-    }
-    case InitialAuto::GoStandby: {
-      if (!planar_auto_.enabled && !z_auto_.enabled) {
-        initial_auto_ = InitialAuto::End;
+      if (AutomaticMovementFinished()) {
+        GoNextInitialAuto();
       }
       return;
     }
     case InitialAuto::End: {
       return;
     }
+  }
+}
+
+void WorldCoordManualController::GoNextInitialAuto() {
+  initial_auto_++;
+  if (go_next_initial_auto_callback_) {
+    go_next_initial_auto_callback_();
+    go_next_initial_auto_callback_ = nullptr;
   }
 }
 
@@ -332,6 +305,61 @@ void WorldCoordManualController::StartRapidHandClientRequest() {
   auto future_result = start_rapid_hand_client_->async_send_request(request, response_callback);
 }
 
+bool WorldCoordManualController::SetNextTarget(const std::string& next_target) {
+  auto request    = std::make_shared<kirin_msgs::srv::SetTarget::Request>();
+  request->target = next_target;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetTarget>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response = future.get();
+    if (response->result) {
+    } else {  // failed
+      RCLCPP_ERROR(this->get_logger(), "Failed to Start Next Target!!");
+    }
+  };
+
+  auto future_result = set_target_client_->async_send_request(request, response_callback);
+  return true;
+}
+
+bool WorldCoordManualController::StartZAutoMovement(const kirin_types::ZAutoState& state) {
+  auto request = std::make_shared<kirin_msgs::srv::StartZAutoMovement::Request>();
+  kirin_msgs::msg::ZAutoState state_msg;
+  state_msg.value       = static_cast<int32_t>(state);
+  request->z_auto_state = state_msg;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::StartZAutoMovement>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response = future.get();
+    if (response->result) {
+      this->is_z_moving = true;
+    } else {  // failed
+      RCLCPP_ERROR(this->get_logger(), "Failed to Start Z Auto Movement!!");
+    }
+  };
+
+  auto future_result = start_z_auto_client_->async_send_request(request, response_callback);
+  return true;
+}
+
+bool WorldCoordManualController::StartPlanarMovement() {
+  auto request   = std::make_shared<kirin_msgs::srv::StartPlanarAutoMovement::Request>();
+  request->value = true;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::StartPlanarAutoMovement>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response = future.get();
+    if (response->result) {
+      this->is_planar_moving = true;
+    } else {  // failed
+      RCLCPP_ERROR(this->get_logger(), "Failed to Start Planar Auto Movement!!");
+    }
+  };
+
+  auto future_result = start_planar_auto_client_->async_send_request(request, response_callback);
+  return true;
+}
+
 void WorldCoordManualController::ModeChangeHandler() {
   using Mode     = kirin_types::MoveMode;
   auto next_mode = (move_mode_ == Mode::Auto) ? Mode::Manual : Mode::Auto;
@@ -383,4 +411,32 @@ void WorldCoordManualController::PublishAllStateMsg() {
   std_msgs::msg::String msg;
   msg.data = pump_msg + "\n" + hand_msg + "\n" + z_auto_msg + "\n\n" + initial_auto_msg;
   all_state_msg_pub_->publish(std::move(msg));
+}
+
+void WorldCoordManualController::PublishManualInput() {
+  auto msg = std::make_unique<kirin_msgs::msg::HandPosition>();
+  msg->point.x = this->GetAxis(JoyController::Axis::LStickX);
+  msg->point.y = this->GetAxis(JoyController::Axis::LStickY);
+  msg->point.z = this->GetAxis(JoyController::Axis::RStickX);
+  double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
+  double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
+  msg->psi = (left_trig - right_trig);
+  manual_vel_pub_->publish(std::move(msg));
+}
+
+void WorldCoordManualController::PlanarFinishedCallback(
+    [[maybe_unused]] const std_msgs::msg::Bool::UniquePtr msg) {
+  is_planar_moving = false;
+}
+
+void WorldCoordManualController::ZFinishedCallback(const std_msgs::msg::Bool::UniquePtr msg) {
+  is_z_moving = false;
+}
+
+void WorldCoordManualController::SetNextInitialAutoCallback(const std::function<void()>& callback) {
+  go_next_initial_auto_callback_ = callback;
+}
+
+bool WorldCoordManualController::AutomaticMovementFinished() {
+  return !is_planar_moving && !is_z_moving;
 }

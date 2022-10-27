@@ -8,9 +8,10 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <kirin_msgs/msg/move_mode.hpp>
+#include <kirin_msgs/msg/hand_position.hpp>
 #include <kirin_msgs/srv/set_target.hpp>
 #include <kirin_msgs/srv/start_z_auto_movement.hpp>
 #include <kirin_msgs/srv/start_planar_auto_movement.hpp>
@@ -76,12 +77,13 @@ class RobotJointStateGenerator : public rclcpp::Node {
   std::optional<Eigen::Vector2d> xy_distance_;
   std::optional<double> psi_distance_;
 
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr z_fin_pub_, planar_fin_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr world_coord_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_pub_;
+  rclcpp::Subscription<kirin_msgs::msg::HandPosition>::SharedPtr manual_vel_sub_;
   std::shared_ptr<tf2_ros::TransformListener> transform_listener_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 
-  rclcpp::Subscription<StringMsg>::SharedPtr next_target_sub_;
   rclcpp::Service<SetTarget>::SharedPtr set_target_srv_;
   rclcpp::Service<StartZAuto>::SharedPtr start_z_srv_;
   rclcpp::Service<StartPlanarAuto>::SharedPtr start_planar_srv_;
@@ -89,8 +91,7 @@ class RobotJointStateGenerator : public rclcpp::Node {
 
   bool IsAllowedToChangeTarget();
   geometry_msgs::msg::Pose GetPose();
-  std::optional<std::tuple<double, double>> RobotJointStateGenerator::GetBellowsOffset(
-      const std::string& bellows_frame);
+  std::optional<std::tuple<double, double>> GetBellowsOffset(const std::string& bellows_frame);
   std::optional<geometry_msgs::msg::Pose> GetPoseFromTf(const std::string& parent_frame,
                                                         const std::string& child_frame);
   std::optional<std::tuple<double, double>> GetDistanceBasedZAutoVelocity(const std::string& target,
@@ -106,6 +107,9 @@ class RobotJointStateGenerator : public rclcpp::Node {
   inline void FinishPlanarAutoMovement();
 
   void PublishJointState(double l, double phi_offset);
+  void PublishPlanarFinished();
+  void PublishZFinished();
+
   void HandleSetTarget(const std::shared_ptr<rmw_request_id_t>,
                        const std::shared_ptr<SetTarget::Request>,
                        std::shared_ptr<SetTarget::Response>);
@@ -116,7 +120,7 @@ class RobotJointStateGenerator : public rclcpp::Node {
                                      const std::shared_ptr<StartPlanarAuto::Request>,
                                      std::shared_ptr<StartPlanarAuto::Response>);
 
-  void ReceiveManualInput(const HandPosition& manual_vel);
+  void ReceiveManualInput(const kirin_msgs::msg::HandPosition::UniquePtr manual_vel);
   void TimerCallback();
 };
 
