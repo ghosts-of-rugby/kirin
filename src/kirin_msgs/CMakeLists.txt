@@ -20,10 +20,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Motor.msg"
   "msg/MotorStateVector.msg"
   "msg/MoveMode.msg"
+  "msg/ZAutoState.msg"
   "srv/StartRapidHand.srv"
+  "srv/StartZAutoMovement.srv"
+  "srv/StartPlanarAutoMovement.srv"
   "srv/SetAirState.srv"
   "srv/SetHandState.srv"
   "srv/ToggleHandState.srv"
+  "srv/SetTarget.srv"
   DEPENDENCIES std_msgs sensor_msgs
 )
 

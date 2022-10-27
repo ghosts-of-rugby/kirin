@@ -1,0 +1,4 @@
+ZAutoState z_auto_state
+bool toggle
+---
+bool result
