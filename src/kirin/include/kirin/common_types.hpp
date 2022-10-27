@@ -55,6 +55,11 @@ enum class MoveMode {
   Stop   = 2
 };
 
+enum class ZAutoState {
+  Approach = 0,
+  Depart   = 1
+};
+
 }  // namespace kirin_types
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_COMMON_TYPES */
