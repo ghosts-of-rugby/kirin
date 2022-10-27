@@ -83,6 +83,11 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
     if (!SetNextTarget(next_target_)) return;
+    if (!kirin_utils::Contain(next_target_, "share")) {
+      if (this->hand_state_ == kirin_types::HandState::Extend) {
+        ChangeHandStateClientRequest();
+      }
+    }
     if (StartPlanarMovement()) {
       RCLCPP_INFO(this->get_logger(), "Planar automatic movement start");
     } else {
@@ -204,6 +209,7 @@ void WorldCoordManualController::InitialAutoMovement() {
           ChangeHandStateClientRequest();
         }
         SetNextTarget(frame::place::kShare);
+        PublishNextTargetMsg(frame::place::kShare);
         StartPlanarMovement();
         GoNextInitialAuto();
       }
@@ -329,10 +335,11 @@ bool WorldCoordManualController::StartZAutoMovement(const kirin_types::ZAutoStat
   request->z_auto_state = state_msg;
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::StartZAutoMovement>::SharedFuture;
-  auto response_callback = [this](ResponseFuture future) {
+  auto response_callback = [this, state](ResponseFuture future) {
     auto response = future.get();
     if (response->result) {
       this->is_z_moving = true;
+      this->z_auto_state = state;
     } else {  // failed
       RCLCPP_ERROR(this->get_logger(), "Failed to Start Z Auto Movement!!");
     }
@@ -414,13 +421,13 @@ void WorldCoordManualController::PublishAllStateMsg() {
 }
 
 void WorldCoordManualController::PublishManualInput() {
-  auto msg = std::make_unique<kirin_msgs::msg::HandPosition>();
-  msg->point.x = this->GetAxis(JoyController::Axis::LStickX);
-  msg->point.y = this->GetAxis(JoyController::Axis::LStickY);
-  msg->point.z = this->GetAxis(JoyController::Axis::RStickX);
+  auto msg          = std::make_unique<kirin_msgs::msg::HandPosition>();
+  msg->point.x      = this->GetAxis(JoyController::Axis::LStickX);
+  msg->point.y      = this->GetAxis(JoyController::Axis::LStickY);
+  msg->point.z      = this->GetAxis(JoyController::Axis::RStickX);
   double left_trig  = 1.0 - this->GetAxis(JoyController::Axis::LTrigger);
   double right_trig = 1.0 - this->GetAxis(JoyController::Axis::RTrigger);
-  msg->psi = (left_trig - right_trig);
+  msg->psi          = (left_trig - right_trig);
   manual_vel_pub_->publish(std::move(msg));
 }
 

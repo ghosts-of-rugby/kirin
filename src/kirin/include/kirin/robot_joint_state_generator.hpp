@@ -69,8 +69,8 @@ class RobotJointStateGenerator : public rclcpp::Node {
   HandPosition vel_;
   VelocityRatio velocity_ratio_;
 
-  std::string next_target_;
   std::string current_target_;
+  std::optional<std::string> next_target_;
 
   ZAuto z_auto_;
   PlanarAuto planar_auto_;
@@ -99,7 +99,6 @@ class RobotJointStateGenerator : public rclcpp::Node {
   std::optional<std::tuple<PlaneTuple, PlaneTuple>> GetDistanceBasedPlanarAutoVelocity(
       const std::string& target);
   inline RPYTuple CalcGeometryQuatToRPY(const geometry_msgs::msg::Quaternion& quat);
-  bool ValidateAndUpdateTarget();
 
   inline void StartZAutoMovement();
   inline void FinishZAutoMovement();

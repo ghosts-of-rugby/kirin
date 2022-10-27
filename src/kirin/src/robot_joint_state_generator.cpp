@@ -25,7 +25,8 @@ RobotJointStateGenerator::RobotJointStateGenerator(const rclcpp::NodeOptions& op
               machine::kRedInitialPosX, machine::kRedInitialPosY, machine::kRedInitialPosZ),
           machine::kRedInitialPsi},
       pos_(initial_pos_),
-      vel_{Eigen::Vector3d::Zero(), 0.0} {
+      vel_{Eigen::Vector3d::Zero(), 0.0},
+      current_target_(frame::kInitialDepart) {
   /* color direction from field */
   is_red_    = declare_parameter("field", "blue") == "red";
   color_dir_ = is_red_ ? -1.0 : 1.0;
@@ -86,7 +87,24 @@ void RobotJointStateGenerator::HandleSetTarget(
 
   // when auto movement is enabled, do not change target
   if (!planar_auto_.enabled || !z_auto_.enabled) {
-    current_target_  = request->target;
+    if ((kirin_utils::Contain(current_target_, "pick")
+         && kirin_utils::Contain(request->target, "place"))) {
+      current_target_ = frame::kDepart;
+      next_target_    = request->target;
+      RCLCPP_WARN(this->get_logger(), "Move via depart position.");
+    } else if (kirin_utils::Contain(current_target_, "place")
+               && kirin_utils::Contain(request->target, "pick")) {
+      current_target_ = frame::kDepart;
+      next_target_    = request->target;
+      RCLCPP_WARN(this->get_logger(), "Move via depart position!");
+    } else if (kirin_utils::Contain(current_target_, frame::kInitialDepart)
+               && kirin_utils::Contain(request->target, frame::kShareWait)) {
+      current_target_ = frame::kInitialDepart;
+      next_target_ = request->target;
+    } else {
+      current_target_ = request->target;
+      next_target_    = std::nullopt;
+    }
     response->result = true;
   } else {
     response->result = false;
@@ -148,7 +166,7 @@ bool RobotJointStateGenerator::IsAllowedToChangeTarget() {
 
 void RobotJointStateGenerator::ReceiveManualInput(
     const kirin_msgs::msg::HandPosition::UniquePtr manual_vel) {
-  if (!z_auto_.enabled) {                   // z manual
+  if (!z_auto_.enabled) {                                      // z manual
     vel_.point.z() = manual_vel->point.z * velocity_ratio_.z;  // receive z vel
   }
   if (!planar_auto_.enabled) {  // planar manual
@@ -198,8 +216,13 @@ geometry_msgs::msg::Pose RobotJointStateGenerator::GetPose() {
       double psi_threshold                  = (current_target_ == frame::kDepart) ? 0.1 : 0.03;
       if (xy_distance_->norm() <= xy_threshold
           && std::abs(psi_distance_.value()) <= psi_threshold) {
-        FinishPlanarAutoMovement();
-        RCLCPP_INFO(this->get_logger(), "planar auto movement finished!");
+        if (next_target_.has_value()) {
+          current_target_ = next_target_.value();
+          next_target_    = std::nullopt;
+        } else {
+          FinishPlanarAutoMovement();
+          RCLCPP_INFO(this->get_logger(), "planar auto movement finished!");
+        }
       }
     }
   } else {
@@ -332,24 +355,6 @@ void RobotJointStateGenerator::TimerCallback() {
   world_coord_pub_->publish(std::move(input_pose));
 
   PublishJointState(l, phi_offset);
-}
-
-bool RobotJointStateGenerator::ValidateAndUpdateTarget() {
-  if ((kirin_utils::Contain(current_target_, "pick")
-       && kirin_utils::Contain(next_target_, "place"))) {
-    current_target_ = frame::kDepart;
-    RCLCPP_ERROR(this->get_logger(),
-                 "move from pick to place directly is invalid! Go through depart position!");
-    return false;
-  } else if (kirin_utils::Contain(current_target_, "place")
-             && kirin_utils::Contain(next_target_, "pick")) {
-    current_target_ = frame::kDepart;
-    RCLCPP_ERROR(this->get_logger(),
-                 "move from place to pick directly is invalid! Go through depart position!");
-    return false;
-  } else {
-    return true;
-  }
 }
 
 void RobotJointStateGenerator::PublishPlanarFinished() {
