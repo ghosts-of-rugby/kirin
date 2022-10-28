@@ -55,6 +55,7 @@ custom_executable(hand_tool_manager_node     main)
 custom_executable(rapid_hand_controller_node main)
 custom_executable(test_motor_controller      main/test)
 custom_executable(test_casadi                main/test)
+custom_executable(test_solver                main/test)
 
 include_directories(
   include
