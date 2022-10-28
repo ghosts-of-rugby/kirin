@@ -188,6 +188,7 @@ void WorldCoordManualController::InitialAutoMovement() {
         StartPlanarMovement();
         StartZAutoMovement(ZAutoState::Approach);
         ChangeHandStateClientRequest();
+        ChangePumpStateClientRequest();
       });
       // wait start button pushed
       return;
@@ -234,8 +235,8 @@ void WorldCoordManualController::InitialAutoMovement() {
         next_target_ = frame::kDepart;
         SetNextTarget(frame::kDepart);
         PublishNextTargetMsg(frame::kDepart);
-        StartPlanarMovement();
         StartZAutoMovement(ZAutoState::Depart);
+        ChangePumpStateClientRequest();
         pick_index = 2;
       });
       return;
@@ -243,6 +244,7 @@ void WorldCoordManualController::InitialAutoMovement() {
     case InitialAuto::AdjustmentCompleted: {
       // when button pushed
       if (AutomaticMovementFinished()) {
+        StartPlanarMovement();
         GoNextInitialAuto();
       }
       return;

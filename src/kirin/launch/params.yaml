@@ -1,19 +1,19 @@
 robot_joint_state_generator:
   ros__parameters:
     velocity_ratio:
-      x: 0.2
-      y: 0.2
-      z: 0.1
-      psi: 0.3
+      x: 0.05
+      y: 0.05
+      z: 0.03
+      psi: 0.05
     xy_auto:
       ratio: 2.0
-      max_speed: 0.45
+      max_speed: 0.35
     psi_auto:
       ratio: 2.0
-      max_speed: 0.9
+      max_speed: 0.75
     z_auto:
       ratio: 2.0
-      max_speed: 0.35
+      max_speed: 0.25
       approach_offset: 0.03
 
 # world_coord_controller:
@@ -70,4 +70,4 @@ hand_tool_manager:
 rapid_hand_controller_node:
   ros__parameters:
     usb_device: 
-      rapid_arduino: usb-Arduino_LLC_Arduino_Nano_Every_05456F05515147394A202020FF102657-if00 
+      rapid_arduino: usb-Arduino_LLC_Arduino_Nano_Every_5F7BB2275153314639202020FF0D3920-if00 
