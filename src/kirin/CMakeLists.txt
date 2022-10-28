@@ -19,6 +19,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(kirin_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Matlab REQUIRED)
+find_package(casadi REQUIRED)
 
 file(GLOB src_files src/*.cpp)
 file(GLOB gencode_files gencode/*.cpp)
@@ -41,6 +42,8 @@ function(custom_executable target dir)
   target_link_libraries(${target}
     ddtmotor
     magic_enum
+    casadi
+    # ${casadi_LIBRARIES} 
     ${Eigen3_LIBRARIES}
   )
 endfunction()
@@ -51,6 +54,7 @@ custom_executable(jsk_visualize_node         main)
 custom_executable(hand_tool_manager_node     main)
 custom_executable(rapid_hand_controller_node main)
 custom_executable(test_motor_controller      main/test)
+custom_executable(test_casadi                main/test)
 
 include_directories(
   include

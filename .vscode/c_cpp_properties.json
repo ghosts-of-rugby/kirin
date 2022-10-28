@@ -11,7 +11,8 @@
                 "${workspaceFolder}/src/catchrobo/src/kirin/gencode",
                 "/opt/ros/foxy/include",
                 "/usr/include/eigen3",
-                "/usr/local/MATLAB/R2020a/extern/include"
+                "/usr/local/include",
+                "/usr/local/MATLAB/R2022a/extern/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
