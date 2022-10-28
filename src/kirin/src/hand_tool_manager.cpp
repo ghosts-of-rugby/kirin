@@ -53,6 +53,8 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
         if (receive.size() == 0) {
           RCLCPP_ERROR(this->get_logger(), "Second Trial to Connect Arduino is Failed");
           rclcpp::shutdown();
+        } else {
+          RCLCPP_INFO(this->get_logger(), "Successfully Connected");
         }
       } else {
         RCLCPP_INFO(this->get_logger(), "Successfully Connected");

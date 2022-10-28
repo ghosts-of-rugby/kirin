@@ -1,6 +1,8 @@
 
+#include <unordered_map>
 #include <rclcpp/rclcpp.hpp>
 #include <ddt-motor/uart.hpp>
+#include <kirin_msgs/srv/set_color_led.hpp>
 #include <kirin_msgs/srv/start_rapid_hand.hpp>
 
 using namespace std::chrono_literals;
@@ -8,6 +10,7 @@ using namespace std::chrono_literals;
 class RapidHandControllerNode : public rclcpp::Node {
  public:
   using Rapid = kirin_msgs::srv::StartRapidHand;
+  using LED   = kirin_msgs::msg::ColorLED;
   explicit RapidHandControllerNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
       : Node("rapid_hand_controller_node", options) {
     use_hardware_ = declare_parameter("use_hardware", false);
@@ -15,6 +18,29 @@ class RapidHandControllerNode : public rclcpp::Node {
       std::string rapid_usb = declare_parameter("usb_device.rapid_arduino", "");
       uart_                 = std::make_shared<ddt::Uart>("/dev/serial/by-id/" + rapid_usb,
                                           ddt::Uart::BaudRate::B_115200);
+      {
+        uart_->Send({0x00});
+        std::this_thread::sleep_for(10ms);
+        auto receive = uart_->Receive();
+        if (receive.size() == 0) {
+          RCLCPP_ERROR(this->get_logger(), "Failed to Receive Data from Arduino");
+          RCLCPP_INFO(this->get_logger(), "Reopen Arduino Port");
+          uart_->Close();
+          std::this_thread::sleep_for(100ms);
+          uart_->Open();
+          uart_->Send({0x00});
+          std::this_thread::sleep_for(10ms);
+          auto receive = uart_->Receive();
+          if (receive.size() == 0) {
+            RCLCPP_ERROR(this->get_logger(), "Second Trial to Connect Arduino is Failed");
+            rclcpp::shutdown();
+          } else {
+            RCLCPP_INFO(this->get_logger(), "Successfully Connected");
+          }
+        } else {
+          RCLCPP_INFO(this->get_logger(), "Successfully Connected");
+        }
+      }
     } else {
       RCLCPP_WARN(this->get_logger(), "hardware deactivated");
     }
@@ -33,13 +59,36 @@ class RapidHandControllerNode : public rclcpp::Node {
           response->result = success;
         });
 
+    color_map_ = {
+        {LED::RED,    'R'},
+        {LED::BLUE,   'B'},
+        {LED::GREEN,  'G'},
+        {LED::CYAN,   'C'},
+        {LED::YELLOW, 'Y'},
+        {LED::PINK,   'P'}
+    };
+
+    led_srv_ = create_service<kirin_msgs::srv::SetColorLED>(
+        "set_color_led",
+        [this](const std::shared_ptr<rmw_request_id_t> request_header,
+               const std::shared_ptr<kirin_msgs::srv::SetColorLED::Request> request,
+               std::shared_ptr<kirin_msgs::srv::SetColorLED::Response> response) -> void {
+          uint8_t color_data = color_map_.at(request->color.value);
+          bool success       = SendDataToArduino(color_data, 1000ms);
+          if (success) {
+            RCLCPP_INFO(this->get_logger(), "LED tape color changed");
+          }
+          response->result = success;
+        });
+
     timer_ = create_wall_timer(100ms, [this]() -> void {
-      if(!use_hardware_) return;
-      if(started_) {
+      if (!use_hardware_) return;
+      if (started_) {
         auto receive = uart_->Receive();
         if (receive.size() == 0) return;
         else {
           if (receive.at(0) == 'F') {
+            started_ = false;
             RCLCPP_INFO(this->get_logger(), "rapid hand movement finished");
           }
         }
@@ -61,7 +110,7 @@ class RapidHandControllerNode : public rclcpp::Node {
       }
 
       uart_->Send({data});
-      std::this_thread::sleep_for(500us);
+      std::this_thread::sleep_for(10ms);
       auto rececive = uart_->Receive();
 
       if (rececive.size() == 0) {
@@ -85,6 +134,8 @@ class RapidHandControllerNode : public rclcpp::Node {
   bool use_hardware_;
   bool started_{false};
   std::shared_ptr<ddt::Uart> uart_;
+  std::unordered_map<int, uint8_t> color_map_;
+  rclcpp::Service<kirin_msgs::srv::SetColorLED>::SharedPtr led_srv_;
   rclcpp::Service<kirin_msgs::srv::StartRapidHand>::SharedPtr rapid_hand_srv_;
   rclcpp::TimerBase::SharedPtr timer_;
 };

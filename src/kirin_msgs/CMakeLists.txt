@@ -16,6 +16,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Joint.msg"
   "msg/AirState.msg"
+  "msg/ColorLED.msg"
   "msg/HandState.msg"
   "msg/HandPosition.msg"
   "msg/Motor.msg"
@@ -26,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/StartZAutoMovement.srv"
   "srv/StartPlanarAutoMovement.srv"
   "srv/SetAirState.srv"
+  "srv/SetColorLED.srv"
   "srv/SetHandState.srv"
   "srv/ToggleHandState.srv"
   "srv/SetTarget.srv"
