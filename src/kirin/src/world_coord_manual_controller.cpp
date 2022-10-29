@@ -83,9 +83,11 @@ WorldCoordManualController::WorldCoordManualController(const std::string& node_n
 
   this->RegisterButtonPressedCallback(Button::LB, [this]() -> void {
     if (!SetNextTarget(next_target_)) return;
-    if (!kirin_utils::Contain(next_target_, "share")) {
-      if (this->hand_state_ == kirin_types::HandState::Extend) {
-        ChangeHandStateClientRequest();
+    if (current_target_.has_value()) {
+      if (kirin_utils::Contain(current_target_.value(), "share")) {
+        if (this->hand_state_ == kirin_types::HandState::Extend) {
+          ChangeHandStateClientRequest();
+        }
       }
     }
     if (StartPlanarMovement()) {
@@ -318,9 +320,10 @@ bool WorldCoordManualController::SetNextTarget(const std::string& next_target) {
   request->target = next_target;
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetTarget>::SharedFuture;
-  auto response_callback = [this](ResponseFuture future) {
+  auto response_callback = [this, next_target](ResponseFuture future) {
     auto response = future.get();
     if (response->result) {
+      current_target_ = next_target;
     } else {  // failed
       RCLCPP_ERROR(this->get_logger(), "Failed to Start Next Target!!");
     }

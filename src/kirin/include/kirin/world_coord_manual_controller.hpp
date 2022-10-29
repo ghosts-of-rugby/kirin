@@ -75,6 +75,7 @@ class WorldCoordManualController : public JoyController {
   std::array<std::string, frame::pick::kNum + 1> pick_target_;
   std::array<std::string, frame::place::kNum + 1> place_target_;
   std::string next_target_{frame::kDepart};
+  std::optional<std::string> current_target_;
 
   kirin_types::HandState hand_state_;
   kirin_types::MoveMode move_mode_;
