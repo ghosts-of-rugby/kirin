@@ -96,6 +96,14 @@ class RapidHandControllerNode : public rclcpp::Node {
     });
   }
 
+  ~RapidHandControllerNode() {
+    uint8_t color_data = color_map_.at(LED::RED);
+    bool success       = SendDataToArduino(color_data, 1000ms);
+    if (success) {
+      RCLCPP_INFO(this->get_logger(), "LED tape color changed");
+    }
+  }
+
   bool SendDataToArduino(uint8_t data, const std::chrono::milliseconds& timeout) {
     if (!use_hardware_) return true;
 
