@@ -188,13 +188,13 @@ void WorldCoordManualController::InitialAutoMovement() {
         StartPlanarMovement();
         StartZAutoMovement(ZAutoState::Approach);
         ChangeHandStateClientRequest();
-        ChangePumpStateClientRequest();
       });
       // wait start button pushed
       return;
     }
     case InitialAuto::GoShare: {
       if (AutomaticMovementFinished()) {
+        ChangePumpStateClientRequest();
         GoNextInitialAuto();
       }
       return;
