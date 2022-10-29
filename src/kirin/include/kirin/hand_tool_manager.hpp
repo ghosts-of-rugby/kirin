@@ -8,6 +8,7 @@
 #include <kirin_msgs/srv/set_air_state.hpp>
 #include <kirin_msgs/srv/set_hand_state.hpp>
 #include <kirin_msgs/srv/toggle_hand_state.hpp>
+#include <kirin_msgs/srv/set_color_led.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <tuple>
@@ -18,6 +19,7 @@
 #include "ddt-motor/uart.hpp"
 
 using HandState = kirin_types::HandState;
+using LED = kirin_types::ColorLED;
 
 class HandToolManager : public rclcpp::Node {
  public:
@@ -43,8 +45,11 @@ class HandToolManager : public rclcpp::Node {
   bool SendDataToArduino(uint8_t data,
                          const std::chrono::milliseconds& timeout
                          = std::chrono::milliseconds(1000));
+  void SetColorLED(const kirin_types::ColorLED& color_led);
+  void UpdateColorLED();
 
   bool use_hardware_;
+  bool is_air_on_{false};
   std::shared_ptr<ddt::Uart> pump_arduino_uart_;
   HandState hand_state_;
   std::unordered_map<HandState, std::string> resource_map_;
@@ -71,6 +76,7 @@ class HandToolManager : public rclcpp::Node {
   rclcpp::Service<kirin_msgs::srv::SetHandState>::SharedPtr set_hand_srv_;
   rclcpp::Service<kirin_msgs::srv::ToggleHandState>::SharedPtr toggle_hand_srv_;
   rclcpp::Service<kirin_msgs::srv::SetAirState>::SharedPtr set_air_srv_;
+  rclcpp::Client<kirin_msgs::srv::SetColorLED>::SharedPtr set_color_client_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 };
 

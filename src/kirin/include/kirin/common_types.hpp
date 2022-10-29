@@ -60,6 +60,15 @@ enum class ZAutoState {
   Depart   = 1
 };
 
+enum class ColorLED {
+  Red  = 0,
+  Green = 1,
+  Blue = 2,
+  Cyan = 3,
+  Yellow = 4,
+  Pink = 5
+};
+
 }  // namespace kirin_types
 
 #endif /* SRC_CATCHROBO_SRC_KIRIN_INCLUDE_KIRIN_COMMON_TYPES */

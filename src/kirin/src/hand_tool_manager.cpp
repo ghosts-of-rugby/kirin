@@ -101,6 +101,7 @@ HandToolManager::HandToolManager(const rclcpp::NodeOptions& options)
   toggle_hand_srv_
       = create_service<ToggleHandState>("tool/toggle_hand_state", handle_toggle_hand_state_);
   set_air_srv_ = create_service<SetAirState>("tool/set_air_state", handle_set_air_state_);
+  set_color_client_ = create_client<kirin_msgs::srv::SetColorLED>("/set_color_led");
 }
 
 void HandToolManager::MarkerTimerCallback() {
@@ -156,7 +157,7 @@ void HandToolManager::SetHandStateCallback(const std::shared_ptr<rmw_request_id_
                 magic_enum::enum_name(this->hand_state_).data(),
                 magic_enum::enum_name(next_state.value()).data());
     this->hand_state_ = next_state.value();
-
+    UpdateColorLED();
     // update transform
     UpdateBellowsTransformVector(this->hand_state_);
     response->result = true;
@@ -187,6 +188,7 @@ void HandToolManager::ToggleHandStateCallback(
               magic_enum::enum_name(this->hand_state_).data(),
               magic_enum::enum_name(next_state).data());
   this->hand_state_ = next_state;
+  UpdateColorLED();
 
   // update transform
   UpdateBellowsTransformVector(this->hand_state_);
@@ -238,6 +240,7 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
       }
     }
     this->air_map_ = next_state;
+    UpdateColorLED();
   }
   response->result = success;
 }
@@ -292,4 +295,34 @@ void HandToolManager::UpdateBellowsTransformVector(HandState hand_state) {
     t.transform.rotation.w    = 1.0;
     transform_vec_.push_back(std::move(t));
   }
+}
+
+void HandToolManager::SetColorLED(const kirin_types::ColorLED& color_led) {
+  auto request   = std::make_shared<kirin_msgs::srv::SetColorLED::Request>();
+  kirin_msgs::msg::ColorLED msg;
+  msg.value = static_cast<int32_t>(color_led);
+  request->color = msg;
+
+  using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetColorLED>::SharedFuture;
+  auto response_callback = [this](ResponseFuture future) {
+    auto response = future.get();
+    if (response->result) {
+    } else {  // failed
+      RCLCPP_ERROR(this->get_logger(), "Color change failed!");
+    }
+  };
+
+  auto future_result = set_color_client_->async_send_request(request, response_callback);
+}
+
+void HandToolManager::UpdateColorLED() {
+  LED led = LED::Cyan;
+  if (hand_state_ == HandState::Shrink) {
+    if (is_air_on_) led = LED::Green;
+    else led = LED::Cyan;
+  } else {
+    if (is_air_on_) led = LED::Yellow;
+    else led = LED::Pink;
+  }
+  SetColorLED(led);
 }
