@@ -236,7 +236,7 @@ void WorldCoordManualController::InitialAutoMovement() {
         SetNextTarget(frame::kDepart);
         PublishNextTargetMsg(frame::kDepart);
         StartZAutoMovement(ZAutoState::Depart);
-        ChangePumpStateClientRequest();
+        if (this->is_air_on_) ChangePumpStateClientRequest();
         pick_index = 2;
       });
       return;
