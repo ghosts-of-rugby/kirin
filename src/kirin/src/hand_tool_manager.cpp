@@ -240,8 +240,9 @@ void HandToolManager::SetAirStateCallback(const std::shared_ptr<rmw_request_id_t
       }
     }
     this->air_map_ = next_state;
-    UpdateColorLED();
+    is_air_on_ = !release;
   }
+  UpdateColorLED();
   response->result = success;
 }
 
@@ -304,9 +305,11 @@ void HandToolManager::SetColorLED(const kirin_types::ColorLED& color_led) {
   request->color = msg;
 
   using ResponseFuture   = rclcpp::Client<kirin_msgs::srv::SetColorLED>::SharedFuture;
-  auto response_callback = [this](ResponseFuture future) {
+  auto response_callback = [this, color_led](ResponseFuture future) {
     auto response = future.get();
     if (response->result) {
+      RCLCPP_INFO(this->get_logger(), "Current Color: [%s]",
+                  magic_enum::enum_name(color_led).data());
     } else {  // failed
       RCLCPP_ERROR(this->get_logger(), "Color change failed!");
     }
