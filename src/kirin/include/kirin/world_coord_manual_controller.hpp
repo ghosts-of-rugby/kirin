@@ -34,6 +34,7 @@ class WorldCoordManualController : public JoyController {
     Start,
     WaitRapidFinished,
     GoShare,
+    WaitHandOpen,
     WaitPicked,
     ZDepart,
     GoPlaceAbove,

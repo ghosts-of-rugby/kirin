@@ -189,16 +189,20 @@ void WorldCoordManualController::InitialAutoMovement() {
         PublishNextTargetMsg(frame::pick::kShare2);
         StartPlanarMovement();
         StartZAutoMovement(ZAutoState::Approach);
-        ChangeHandStateClientRequest();
       });
       // wait start button pushed
       return;
     }
     case InitialAuto::GoShare: {
       if (AutomaticMovementFinished()) {
-        ChangePumpStateClientRequest();
+        ChangeHandStateClientRequest();
         GoNextInitialAuto();
       }
+      return;
+    }
+    case InitialAuto::WaitHandOpen: {
+      ChangePumpStateClientRequest();
+      GoNextInitialAuto();
       return;
     }
     case InitialAuto::WaitPicked: {
